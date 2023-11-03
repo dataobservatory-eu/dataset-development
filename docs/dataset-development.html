@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-GB" xml:lang="en-GB"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Daniel Antal">
+
+<title>Making Datasets Truly Interoperable and More Reusable in R</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="dataset-development_files/libs/clipboard/clipboard.min.js"></script>
+<script src="dataset-development_files/libs/quarto-html/quarto.js"></script>
+<script src="dataset-development_files/libs/quarto-html/popper.min.js"></script>
+<script src="dataset-development_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="dataset-development_files/libs/quarto-html/anchor.min.js"></script>
+<link href="dataset-development_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="dataset-development_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="dataset-development_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="dataset-development_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="dataset-development_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#making-datasets-truly-interoperable-and-more-reusable-in-r" id="toc-making-datasets-truly-interoperable-and-more-reusable-in-r" class="nav-link active" data-scroll-target="#making-datasets-truly-interoperable-and-more-reusable-in-r">Making Datasets Truly Interoperable and More Reusable in R</a></li>
+  <li><a href="#why-we-need-more-semantics" id="toc-why-we-need-more-semantics" class="nav-link" data-scroll-target="#why-we-need-more-semantics">Why we need more semantics?</a></li>
+  <li><a href="#methodology" id="toc-methodology" class="nav-link" data-scroll-target="#methodology">Methodology</a>
+  <ul class="collapse">
+  <li><a href="#statistical-datasets-microdata-and-nano-level-datasets" id="toc-statistical-datasets-microdata-and-nano-level-datasets" class="nav-link" data-scroll-target="#statistical-datasets-microdata-and-nano-level-datasets">Statistical datasets, microdata, and nano-level datasets</a></li>
+  <li><a href="#cataloguing" id="toc-cataloguing" class="nav-link" data-scroll-target="#cataloguing">Cataloguing</a></li>
+  </ul></li>
+  <li><a href="#pragmatic-approach" id="toc-pragmatic-approach" class="nav-link" data-scroll-target="#pragmatic-approach">Pragmatic approach</a>
+  <ul class="collapse">
+  <li><a href="#features" id="toc-features" class="nav-link" data-scroll-target="#features">Features</a>
+  <ul class="collapse">
+  <li><a href="#component-definition---variables" id="toc-component-definition---variables" class="nav-link" data-scroll-target="#component-definition---variables">Component definition - variables</a></li>
+  <li><a href="#dataset-cataloguing" id="toc-dataset-cataloguing" class="nav-link" data-scroll-target="#dataset-cataloguing">Dataset cataloguing</a></li>
+  <li><a href="#simple-fields" id="toc-simple-fields" class="nav-link" data-scroll-target="#simple-fields">Simple fields</a></li>
+  <li><a href="#persons-unique-identifiers" id="toc-persons-unique-identifiers" class="nav-link" data-scroll-target="#persons-unique-identifiers">Persons, Unique identifiers</a></li>
+  <li><a href="#conceptualised-fields" id="toc-conceptualised-fields" class="nav-link" data-scroll-target="#conceptualised-fields">Conceptualised fields</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="dataset-development.docx"><i class="bi bi-file-word"></i>MS Word</a></li><li><a href="dataset-development.epub"><i class="bi bi-file"></i>ePub</a></li><li><a href="dataset-development.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Making Datasets Truly Interoperable and More Reusable in R</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Daniel Antal <a href="https://orcid.org/0000-0003-1689-0557" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="making-datasets-truly-interoperable-and-more-reusable-in-r" class="level2">
+<h2 class="anchored" data-anchor-id="making-datasets-truly-interoperable-and-more-reusable-in-r">Making Datasets Truly Interoperable and More Reusable in R</h2>
+<p>The dataset package extension to the R statistical environment aims to ensure that the most important R object that contain a dataset, i.e.&nbsp;a <code>data.frame</code> or an inherited <code>tibble</code>, <code>tsibble</code> or <code>data.table</code> contains important metadata for the reuse and validation of the dataset contents. We aim to offer a novel solution to support individuals or small groups of data scientists working in various business, academic or policy research functions who cannot count on the support of librarians, knowledge engineers, and extensive documentation processes.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This document aims to orient the work starting from [eurostat] and then generalising it into the new packages [dataset] and [statcodelists].</p>
+<p>The term <code>dataset</code> and <code>data set</code> or even <code>Data set</code> currently follows the context to where the text refers to. Some standards capitalise terms, others not, and dataset has two alternate spellings.</p>
+</div>
+</div>
+<p>The R language offers generic and inherited data objects to store tabular data, which all use R’s flexible metadata system (“attributes”). Each object has its default properties or attributes, for example, a <code>data.frame</code> has <code>row.names</code> and <code>col.names</code>, and the user can freely add further attributes. User-defined S3 or other objects inherit some attributes added at construction or coercion to the new type. Using metadata attached to the data is very useful because it minimizes the chances that the metadata will be lost. However, perhaps because of its flexibility and lack of a well-trodden path, few R users add metadata to the objects themselves. Metadata recorded in other objects, if at all, is often detached or lost for the reuse of the R object.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>myiris <span class="ot">&lt;-</span> iris</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(myiris, <span class="st">"row.names"</span>) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(myiris, <span class="st">"title"</span>) <span class="ot">&lt;-</span> <span class="st">"The Famous [iris] Dataset"</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(myiris)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$names
+[1] "Sepal.Length" "Sepal.Width"  "Petal.Length" "Petal.Width"  "Species"     
+
+$class
+[1] "data.frame"
+
+$title
+[1] "The Famous [iris] Dataset"</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The current version of [dataset] already implements this. We should now focus on how to retain such information without relying (yet) on dataset in [eurostat].</p>
+</div>
+</div>
+<p>We want to strike a good balance between prescribing the mandatory use of necessary metadata and letting the user choose. Users will refrain from using a complicated initialisation process, especially in pre-existing pipelines or during experimental analysis; on the other hand, most data analysts are not metadata experts and often need to become more familiar with even the most basic metadata standards.</p>
+<p>One way of helping them is the creation of flexible, new, derived classes from the most frequently used classes, such as <code>data.frame</code>, <code>data.table</code> or <code>tibble</code> that helps add FAIR and provenance metadata for supporting interoperability, reuse and review. This approach would allow us to increase usability with better printing or summary functions. At this point, we will create new S3 classes only to show the feasibility of this way; we would need many uses and user experience to design suitable S3 classes, which should be stable.</p>
+<p>The other way is designing functions that add helpful metadata to tabular data objects. Because we can add almost any attributes to an R object, in the early stages, we will mainly focus on developing helpful and user-friendly metadata functions and export/import functions that retain the metadata. Although offering less user comfort, this allows more experimentation because we can add the same metadata to a <code>tsibble</code> (a <code>tibble</code>-like time series object) or a <code>data.frame</code> (which is rather different from a <code>tibble</code>) without modification.</p>
+<p>The best pragmatic solution is to start experimenting with recording more metadata from the data we download from Eurostat. That data fully complies with the best SDMX and W3C metadata standards, but the eurostat package just does not work with the metadata parts much.</p>
+</section>
+<section id="why-we-need-more-semantics" class="level2">
+<h2 class="anchored" data-anchor-id="why-we-need-more-semantics">Why we need more semantics?</h2>
+<p>A dataset in its tidy form has enough semantic information to allow a knowledgeable to easily create pipelines to process or manipulate the data in a reproducible way. The tidy data form is a statistical representation of Cobb’s 3rd normal form, which is ideal for incorporation into a relational database. Most heavy R users will come across this concept sooner or later: the modernisation of the R language and the tidyverse packages, which are used in all of our packages that we want to modernise, all use this concept.</p>
+<p>The tidy data format contains the semantics necessary for the analyst to work with the dataset in a pipeline. This amount of semantic information is usually not enough for interoperability or reuse: years after, even the initial user or analyst may struggle to understand the concepts that the data is supposed to represent; the provenance of the data becomes unclear; and a third-party user will almost certainly require further metadata to use the dataset. Like relational databases, a third-party user has difficulty accessing the data without a user-friendly schema description.</p>
+<p>The FAIR recommendations focus on describing the dataset as a whole when released and mandate the use of Dublin Core (DC) or DataCite descriptive metadata. Our critique of this approach is that librarians developed DC with a focus on texts; DataCite, while considering datasets, also wanted to be format-agnostic and offer a solution that can describe texts, still images, video and datasets alike. While using DC and DataCite can significantly increase findability and encourage proper attribution, they could be more helpful for interoperability and reuse in the case of datasets. A user can immediately reuse a book in her domain of expertise if it is written in a natural language she understands. This is not the case with a dataset.</p>
+<p>Data is only informative with metadata. The kind of metadata that is required to read and functionally use a dataset is not the descriptive metadata that helps find the file containing the dataset but metadata that makes the numbers and their organisation intelligible for the data analyst. How are observations organised in the dataset? What do columns mean? Are the numbers expressed in euros or dollars? Kilograms or tons? Without such semantic information, the dataset cannot be reused. It is also barely interoperable because addition into a relational or graph database is hard or impossible.</p>
+<p>In R, most metadata packages [for example, dataspice, we need a literature review here] add the metadata to a new dataset, creating an initial separation of data and metadata. Our approach, i.e., adding metadata, including rich semantics, into the attributes metadata fields of an object, keeps the data and its crucial metadata attached. This creates sufficient interoperability and reuse within the R ecosystem, provided the user serialises the data and metadata into a native <code>.rds</code> file.</p>
+<p>The problem with this approach is that for interoperability and reuse reasons, we often serialise the contents of R objects into more interoperable formats, such as CSV or Excel files. At this point, we will have to work with at least two files: a data and a metadata file. For example, the W3C recommendation for releasing data in CSV format is to accompany the data with semantic and other metadata in an accompanying JSON file.</p>
+<p>There is a standard way to keep all metadata and data in one file: to convert the data using the RDF format (Resource Description Format) into one of the serialisation formats of RDF, for example, the default XML; or any other serialisation formats used to store information that support the RDF format. This format is ideal for inclusion in a graph database. It can be easily included in a relational database management system because it contains not only the data but also schematic information on how to use it.</p>
+<p>If the analyst works in a more extensive, well-regulated business process, then adding semantics is possible by stacking various IT solutions. However, we would like to find solutions that are workable for a typical R user who may work in a small team or alone.</p>
+<p>While most analysts are unlikely to use the RDF serialisation, we believe it is the only future-proof, long-term safe storage for the dataset. It is a format that meets the five-star requirements of open science’s FAIR, and aligns well with the way the EU suggest the release of open data. Therefore, we want to create functions that:</p>
+<ul>
+<li><p>Add necessary metadata to the attributes of tabular data container objects in R;</p></li>
+<li><p>Help the user to go beyond the bear minimum and easily add further metadata;</p></li>
+<li><p>Offer serialisation solutions that meet international standards, including the W3C standard on releasing data in CSV format;</p></li>
+<li><p>Offers serialisation to the W3C-SDMX standard on statistical datasets and RDF.</p></li>
+</ul>
+</section>
+<section id="methodology" class="level2">
+<h2 class="anchored" data-anchor-id="methodology">Methodology</h2>
+<p>The SDMX-W3C <a href="https://www.w3.org/TR/vocab-data-cube/">Data cube model</a> describes the statistical dataset “as a multi-dimensional space, or hyper-cube, indexed by those dimensions. This space is commonly referred to as a cube for short”.</p>
+<p>Statistical datasets are compiled from micordatasets (which contain observations about the statistical population), which may be compiled from nano-level datasets (when we need to consult multiple datasets about a single statistical object.)</p>
+<p><em>For example, our statistical dataset contains the average remuneration of female and male music creators by country and year. This dataset is created from a mico-level dataset(s) that contained the earnings of male and female music creators in each year in various countries. We may have had several datasets about the earnings of each artist on various royalty accounts. The statistical dataset sufficiently identifies Slovakia 2019 case, while the creation of this dataset needs averaging of male and female earnings in Slovakia for the year 2019; the data is connected to persons with an identifier.</em></p>
+<section id="statistical-datasets-microdata-and-nano-level-datasets" class="level3">
+<h3 class="anchored" data-anchor-id="statistical-datasets-microdata-and-nano-level-datasets">Statistical datasets, microdata, and nano-level datasets</h3>
+<p>Practically speaking, the base R <code>data.frame</code> is a good information object for a statistical dataset because it does not have an explicit row identifier. It uses the <code>row.names</code> attributes, which are by default just integer numbers. The <code>tibble</code> package offers a function to make an identifier column (or primary key column) from any column in case we work with microdata or more structured data created from several statistical datasets.</p>
+<p>Suppose we want to map a user’s <code>data.frame</code>, or <code>tibble</code> or <code>data.table</code> object to a dataset following the Data cube model, we need to ensure that columns that contain a unique combination and can potentially identify an observation (row) are made dimensions.</p>
+<p>In either case, we need to be able to identify <strong>observations</strong>. They constitute the measured values. In a statistical table, the observations would be the values in the table cells.</p>
+<p>In the case of statistical data, to <strong>locate an observation</strong> within the hypercube, one has at least to know the value of each dimension at which the observation is located, so these values must be specified for each observation. Datasets can have additional organisational structures in the form of slices as described that we do not implement in the first phase. In the case of microdata, the most obvious way to locate an observation is by using a unique observation identifier. If no such identifier is present, we treat various variables as dimensions. For example, within a small workplace, a unique combination of given name and family name stored in one or two columns may be sufficient to identify an observation about Jane Doe. In larger organisations, where there may be multiple people named as Jane Doe, or there may have been previous employees with the same name, they are likely to use a unique personal identifier.</p>
+<p>Once we locate the observation, we need specific <strong>structural metadata</strong> to be able to interpret it. What is the unit of measurement? Is the value measured or estimated? These metadata are provided as attributes and can be attached to individual observations or to higher levels. When they are attributed to individual observations, they should be part of the dataset; when the entire dataset contains only actual data or data measured in the same unit, then they can be attached to the dataset’s metadata.</p>
+<p>The Data cube model offers two solutions for structuring datasets with multiple measures; however, choosing between these approaches already requires a solid data model for the dataset itself.</p>
+</section>
+<section id="cataloguing" class="level3">
+<h3 class="anchored" data-anchor-id="cataloguing">Cataloguing</h3>
+<p>Dublin Core and DataCite are metadata standards used in open science and libraries to make the datasets findable and attributable. They are instrumental in being found in libraries and their repositories, but these differ from the typical places where we would look for quality datasets. Therefore, we want to add further descriptive metadata that complies with the W3C DataCatalogue definition that large data providers and statistical offices use. We also want to comply with Schema.org’s definition of the Dataset and DataDownload, because this is the descriptive metadata standard that internet search engines use.</p>
+</section>
+</section>
+<section id="pragmatic-approach" class="level1">
+<h1>Pragmatic approach</h1>
+<p>Our primary goal is to provide a dataset solution that only partially implements the data cube model because such an implementation requires the user to think in dimensions, attributes, and measurements. By relaxing the data cube model, we can still add much functionality to the upgraded dataset. However, we should always keep the door open to embracing the cube model to gain full machine-actionability and interoperability. In other words, we should relax the cube model only in ways that it remain very easy to return to full compliance with the W3C Data cube definition.</p>
+<p>We relax the datacube model by creating a simplified data structure definition where the user does not need to select which variables constitute <em>attributes</em>, <em>dimensions</em>, or <em>measurements</em>. We can make the dataset more machine-actionable by making such categorisation explicit, for which we may provide helper functions. For example, the combination of dimensions must be unique within a dataset; therefore we can rule out variables as dimensions if they breach this unicity condition. Any variable with a unit of measure attached to it is a measurement.</p>
+<p>A pragmatic approach to development is the application of what we want to do generally with a <code>data.frame</code> or similar object to implement is, as a use case, for Eurostat’s datasets. These datasets come from the Eurostat data warehouse, and therefore they are already formatted properly.</p>
+<section id="features" class="level2">
+<h2 class="anchored" data-anchor-id="features">Features</h2>
+<section id="component-definition---variables" class="level3">
+<h3 class="anchored" data-anchor-id="component-definition---variables">Component definition - variables</h3>
+<p>Allow the addition of metadata for each column (component in the Data cube model), either to fully or partially comply with the Data cube models’s dataset definition.</p>
+<section id="minimum-requirements" class="level4">
+<h4 class="anchored" data-anchor-id="minimum-requirements">Minimum requirements</h4>
+<ul>
+<li><p>Adding a <code>rdfs:label</code> property to each variable; for example, <code>"life expectancy" @en</code>;</p></li>
+<li><p>Explicitly adding, or guessing, when possible, the <code>rdfs:range</code> property of the column, for example, with <code>xsd:decimal</code> in a way that the dataset can be serialised to basic formats like CSV or Excel or HTML.</p></li>
+</ul>
+<p>If you look at the following example, even without the <code>eg:lifeExpectancy</code> is a <code>qb:MeasureProperty</code> statement, every other statement can be recorded.</p>
+<ul>
+<li>The name of the column is <code>lifeExpectancy</code> [eg stands for example; i.e.&nbsp;this column name is not defined in a strict name space.]</li>
+<li>The column has a <code>life expectancy</code> label in English and <code>várható élettartam</code> [The user can add a label for any ISO language thus increasing the likelihood to be found in search terms in other languages]</li>
+<li><code>rdfs:range xsd:decimal</code> states when read from a flat file such as an XML or a CSV file, this file should be read into a spreadsheet or statistical software as a numeric variable with decimals and not as text.</li>
+<li>The <code>sdmx-measure:obsValue</code> statement and <code>qb:MeasureProperty</code> should remain to be decided later; i.e., they need a more formal semantic knowledge about the dataset.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example with life expectancy data</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>eg<span class="sc">:</span>lifeExpectancy  a rdf<span class="sc">:</span>Property, qb<span class="sc">:</span>MeasureProperty;     </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    rdfs<span class="sc">:</span>label <span class="st">"life expectancy"</span><span class="sc">@</span>en;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    rdfs<span class="sc">:</span>label <span class="st">"várható élettartam"</span><span class="sc">@</span>hu;  </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    rdfs<span class="sc">:</span>subPropertyOf sdmx<span class="sc">-</span>measure<span class="sc">:</span>obsValue;     </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    rdfs<span class="sc">:</span>range xsd<span class="sc">:</span>decimal . </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="recommended-requirements" class="level4">
+<h4 class="anchored" data-anchor-id="recommended-requirements">Recommended requirements</h4>
+<ul>
+<li><p>Adding the valid range for <code>rdfs:range</code> for data validation explicitly.</p></li>
+<li><p>Conceptualising the variables, i.e., adding a well-defined concept that the variable represents.</p></li>
+<li><p>We can create helper functions to guess or help set widely used concepts, such as SEX, TIME, etc.</p></li>
+<li><p>Defining which variables should be seen as dimensions, measures, and attributes.</p></li>
+</ul>
+<p>In the following example, we go beyond our minimum features. The <code>qb:concept sdmx-concept:refPeriod</code> statements makes it clear that our <code>refPeriod</code> variable (column in a tidy dataset) contains the reference period (in time) for the observations.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>eg<span class="sc">:</span>refPeriod a rdf<span class="sc">:</span>Property, qb<span class="sc">:</span>DimensionProperty;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>   rdfs<span class="sc">:</span>label <span class="st">"reference period"</span><span class="sc">@</span>en;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>   rdfs<span class="sc">:</span>subPropertyOf sdmx<span class="sc">-</span>dimension<span class="sc">:</span>refPeriod;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>   rdfs<span class="sc">:</span>range interval<span class="sc">:</span>Interval;</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>   qb<span class="sc">:</span>concept sdmx<span class="sc">-</span>concept<span class="sc">:</span>refPeriod</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And going one step even further, for a <code>sex</code> variable we can add standardised codelists, by recording the following statements: <code>eg:sex qb:codeList sdmx-code:Sex</code>, i.e., the <code>sex</code> variable has a codelist which is the <a href="https://sdmx.org/?page_id=3215">cross-domain standard codelist</a> to code sex and gender.</p>
+<p>For validation purposes, for which we may want to add helper functions in a later, more mature stage, we can also use the following statement: <code>eg:sex rdfs:range sdmx-code:Sex</code> which would allow a function to retrieve the valid coding of <code>Sex</code> variables, and check if the R <code>factor</code> variable indeed only contains levels that conform to this codelist definition.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>eg<span class="sc">:</span>sex a qb<span class="sc">:</span>DimensionProperty, qb<span class="sc">:</span>CodedProperty;</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    qb<span class="sc">:</span>codeList sdmx<span class="sc">-</span>code<span class="sc">:</span>Sex ;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    rdfs<span class="sc">:</span>range sdmx<span class="sc">-</span>code<span class="sc">:</span>Sex .</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The aim of our <a href="https://statcodelists.dataobservatory.eu/">statcodelists</a> package is to ensure that these standard codelists are immediately available in native R variables for the user, making validation even simpler.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(statcodelists)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: statcodelists</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'statcodelists' was built under R version 4.2.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>CL_SEX <span class="ot">&lt;-</span> statcodelists<span class="sc">::</span>CL_SEX</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># The valid code range:</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>CL_SEX<span class="sc">$</span>id</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "F"  "M"  "_N" "_O" "_T" "_U" "_Z"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The valid labels (levels for R factors):</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>CL_SEX<span class="sc">$</span>name</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Female"         "Male"           "Non response"   "Other"         
+[5] "Total"          "Unknown"        "Not applicable"</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+First steps
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Our task should be to try to find this information in the eurostat data warehouse, and retain it, then create simple functions to modify or interact with them.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="dataset-cataloguing" class="level3">
+<h3 class="anchored" data-anchor-id="dataset-cataloguing">Dataset cataloguing</h3>
+<p>Dublin Core and DataCite are metadata standards used in open science and libraries to make the datasets findable and attributable.</p>
+<p>The W3C <a href="https://www.w3.org/TR/vocab-dcat-3/#introduction">Data Catalog Vocabulary (DCAT) - Version 3</a> and Schema.org’s definition of the Dataset and DataDownload help to find datasets in data stores (as opposed to Dublin Core and DataCite, which are not designed to search for datasets.) The W3C and Schema.org definitions are highly interoperable (<a href="https://www.w3.org/TR/vocab-dcat-3/#dcat-sdo">see</a>).</p>
+<p>There is an overlap between these four definitions, and we provide support for all four of them.</p>
+</section>
+<section id="simple-fields" class="level3">
+<h3 class="anchored" data-anchor-id="simple-fields">Simple fields</h3>
+<p>Simple metadata fields do not require validation; they can take the form of simple text or, integers or decimals. These are the fields that can take a literal value.</p>
+<p>Adding them in a parameter list via a simple function to the dataset is straightforward.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>myiris <span class="ot">&lt;-</span> iris</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(myiris, <span class="st">"row.names"</span>) <span class="ot">&lt;-</span> <span class="cn">NULL</span> <span class="co"># To make results easier to read</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>add_title <span class="ot">&lt;-</span> <span class="cf">function</span>(dataset, title) {</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">attr</span>(dataset, <span class="st">"title"</span>) <span class="ot">&lt;-</span> title</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  dataset</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>myiris <span class="ot">&lt;-</span> <span class="fu">add_title</span> (myiris, <span class="st">"The Famous [iris] Dataset"</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(myiris)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$names
+[1] "Sepal.Length" "Sepal.Width"  "Petal.Length" "Petal.Width"  "Species"     
+
+$class
+[1] "data.frame"
+
+$title
+[1] "The Famous [iris] Dataset"</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+First steps
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We already have this programed in the 0.2.0 version of [dataset] but we should now experiment with retaining and working with this data as they are in [eurostat] and on the eurostat data warehouse.</p>
+</div>
+</div>
+</section>
+<section id="persons-unique-identifiers" class="level3">
+<h3 class="anchored" data-anchor-id="persons-unique-identifiers">Persons, Unique identifiers</h3>
+<p>For increasing reusability and knowledge combination, it is a good practice to include globally unique identifiers among the metadata. Such unique identifiers include the creator’s identifier (for example, ORCiD) or the use of the DOI.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+First steps
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In this regard, our packages already utilise how R manages bibliographic citations, and we should remain compatible with this approach.</p>
+</div>
+</div>
+</section>
+<section id="conceptualised-fields" class="level3">
+<h3 class="anchored" data-anchor-id="conceptualised-fields">Conceptualised fields</h3>
+<p>The SDMX standard includes a set of content-oriented guidelines (COG) which define a set of common statistical concepts and associated code lists that are intended to be reusable across data sets (for example, describing the frequency of the observations, reference area [geography] of the observations, whether the data is missing, estimated, or actual). Variables and metadata describing such information should recorded with COG because it is standardised and machine-actionable.</p>
+<p>These COGs are conceptualised, meaning they utilise abstract concept objects described in machine-actionable and highly standardised ontologies, taxonomies or thesauri. DC and DataCite, as well as schema.org or W3C’s Data Catalogue, support the use of conceptualised descriptions, for example, when recording the <code>Subject</code> of the dataset or recording the meaning of variables in the dataset.</p>
+<p>In such cases, we will rely on the quasi-standard SKOS to describe conceptualised metadata. With SKOS, advanced users can create or curate their thesaurus that is machine-readable, but such a scenario is unlikely with a typical R user. Instead, we should point to the most generally used thesauri.</p>
+<p>For example, the <a href="https://id.loc.gov/authorities/subjects.html">Library of Congress Subject Headings</a> (LCSH) comprise a thesaurus (in the information science sense, a controlled vocabulary) of subject headings maintained by the United States Library of Congress for use in bibliographic records. The LCSH is the most used thesaurus in the world; many other thesauri, for example, ones created by national libraries, offer equivalence relations or translations to LCSH. Helping the user to use LCSH and 2-3 well-curated similar thesauri already adds a lot to the discoverability of the dataset.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span> (myiris, <span class="st">"Subject"</span>) <span class="ot">&lt;-</span> <span class="fu">list</span> ( </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Heading =</span> <span class="st">"Datasets"</span>,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">URI =</span> <span class="st">"http://id.loc.gov/authorities/subjects/sh2018002256"</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span> (myiris)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$names
+[1] "Sepal.Length" "Sepal.Width"  "Petal.Length" "Petal.Width"  "Species"     
+
+$class
+[1] "data.frame"
+
+$title
+[1] "The Famous [iris] Dataset"
+
+$Subject
+$Subject$Heading
+[1] "Datasets"
+
+$Subject$URI
+[1] "http://id.loc.gov/authorities/subjects/sh2018002256"</code></pre>
+</div>
+</div>
+<p>The PURL/URI of the “Datasets” Heading in LCSH resolves to the following page:</p>
+<p><a href="https://id.loc.gov/authorities/subjects/sh2018002256.html" class="uri">https://id.loc.gov/authorities/subjects/sh2018002256.html</a></p>
+<p>This page uses content negotiation, and it is accessible for both humans and computers. If we look at it via a web browser as humans, we can see that they contain the definition in various machine-readable formats, for example, in <a href="http://id.loc.gov/authorities/subjects/sh2018002256.rdf">RDF/XML</a> and <a href="http://id.loc.gov/authorities/subjects/sh2018002256.skos.json">SKOS JSON</a>.</p>
+<p>We have to offer exporting functions to W3C CSV+JSON (we can also if we want, create Excel+JSON or SPSS+JSON versions) and to RDF serialisation formats to retain this reach metadata. We can, of course, convert the Subject heading “Datasets” into a link that points to the PURL of the subject heading, but this is only useful for humans. The JSON or RDF formats place the URI/PURL into a well-defined place that makes computers immediately understand to look all the information up. On the other hand, the lack of such exporting shows why most datasets that are supposed to conform with FAIR remain so hard to find.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+First steps
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The question is how to find a comfortable way of entering such information: as <code>list</code>, nested list, <code>data.frame</code>? It is clear what information should be added to <code>attributes</code> but we should make it user-friendly to an R user who is not familiar with knowledge engineering, metadata standards, and perhaps find it hard to work with highly structured objects.</p>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
