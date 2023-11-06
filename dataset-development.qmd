@@ -24,6 +24,7 @@ This document aims to orient the work starting from [eurostat] and then generali
 The term `dataset` and `data set` or even `Data set` currently follows the context to where the text refers to. Some standards capitalise terms, others not, and dataset has two alternate spellings. 
 
 :::
+
 The R language offers generic and inherited data objects to store tabular data, which all use R's flexible metadata system ("attributes"). Each object has its default properties or attributes, for example, a `data.frame` has `row.names` and `col.names`, and the user can freely add further attributes. User-defined S3 or other objects inherit some attributes added at construction or coercion to the new type. Using metadata attached to the data is very useful because it minimizes the chances that the metadata will be lost. However, perhaps because of its flexibility and lack of a well-trodden path, few R users add metadata to the objects themselves. Metadata recorded in other objects, if at all, is often detached or lost for the reuse of the R object.
 
 ```{r}
