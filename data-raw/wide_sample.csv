@@ -1,0 +1,7 @@
+"rowid","indic_is","ind_type","unit","geo","time","values"
+"example1","I_DSK2_BAB","F_Y16_74","PC_IND","IT",2021-01-01,43.09
+"example2","I_DSK2_BAB","IND_TOTAL","PC_IND","IT",2021-01-01,45.6
+"example3","I_DSK2_BAB","M_Y16_74","PC_IND","IT",2021-01-01,48.16
+"example4","I_DSK2_BAB","F_Y16_74","PC_IND","NL",2021-01-01,76.94
+"example5","I_DSK2_BAB","IND_TOTAL","PC_IND","NL",2021-01-01,78.94
+"example6","I_DSK2_BAB","M_Y16_74","PC_IND","NL",2021-01-01,80.94
