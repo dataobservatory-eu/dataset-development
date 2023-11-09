@@ -186,40 +186,37 @@ Turning the dataset object into a resource is optimal for semantic richness but 
 
 We implement an s3 data class, dataset, which can be created from any R object that is inherited from base R's data.frame; a `tibble` from tidyverse, a data.table, or a tsibble for a modern time series dataset.  We must very carefully add methods to the dataset class to avoid any inconsistencies among the widely used packages for the various dataset containers. Currently, we only implement `describe()`, which gives a human-readable oversight of the metadata attached to our dataset.  
 
+
 It is unlikely to conflict with any classes derived from `tibble`, `data.frame` or `tsibble`, because it only interacts with attributes of the objects, not the object contents itself.
 
 ### Metadata Management
 
 #### Literals and agents
 
-```{r}
-myiris <- iris
-
-iris_bibentry <- bibentry( bibtype = "Misc", 
-          title = "Iris Dataset", 
-          author = person(family ="Anderson", 
-                          given ="Edgar", 
-                          role = "aut"), 
-          doi = "https://doi.org/10.1111/j.1469-1809.1936.tb02137.x",
-          description = "The famous iris dataset distributed with R.",
-          publisher = "American Iris Society",
-          year = 1935,  # datacite:PublicationYear and dc:date
-          version = "1.0", # datacite:Version
-          language = "eng"
-          )
-
-attr(myiris, "bibentry") <- iris_bibentry
-attr(myiris, "row.names") <- NULL # for easier review of output
-attributes(myiris)
-
+```{r bibentry}
+iris_bibentry <- bibentry( 
+  bibtype = "Misc", 
+  title = "Iris Dataset", 
+  author = person(family ="Anderson", 
+                  given ="Edgar", 
+                  role = "aut"), 
+  doi = "https://doi.org/10.1111/j.1469-1809.1936.tb02137.x",
+  description = "The famous iris dataset distributed with R.",
+  publisher = "American Iris Society",
+  year = 1935,  # datacite:PublicationYear and dc:date
+  version = "1.0", # datacite:Version
+  url = "https://en.wikipedia.org/wiki/Iris_flower_data_set",
+  language = "eng", 
+  resourceType = "Dataset"
+)
 ```
+
 Even though the default print of a `bibentry` item does not show all the metadata, we can easily retrieve them.
 
 ```{r mybibentry}
-mybibentry <- attr(myiris, "bibentry")
-mybibentry$publisher
-mybibentry$version
-mybibentry$description
+iris_bibentry$publisher
+iris_bibentry$version
+iris_bibentry$description
 ```
 
 We hard-wire the Dataset type into the attribute `type`.
@@ -241,13 +238,8 @@ relatedItem <- list(
     relationType = "IsPartOf"
   )
 )
-
-attr(myiris, "relatedItem") <- relatedItem
 ```
 
-```{r}
-attributes(myiris)
-```
 
 
 #### Dates 
@@ -261,18 +253,45 @@ myirisdata <- list (
   Created = 1935,
   Issued = as.Date("2022-01-01")
 )
+```
 
-attr(myiris, "Date") <- myirisdata
+
+### Subjects
+
+The `subject` class is a simple, pre-defined class inherited from `list` that contains the elements requires for DataCite.
+
+```{r subject}
+source(here::here("R", "subjects3.R"))
+
+irissubject <- subject( 
+  heading =  c("Data sets", "Irises (Plants)"), 
+  schemeURI = rep("https://id.loc.gov/authorities/subjects/", 2),
+  valueURI = c("https://id.loc.gov/authorities/subjects/sh2018002256.html",                      "https://id.loc.gov/authorities/subjects/sh85068079.html"))
 
 ```
 
-```{r}
-attr(myiris, "Date")$PublicationYear
-attr(myiris, "Date")$Issued
-```
 
 
 ### The dataset S3 Class
+
+
+```{r}
+data(iris)
+source(here::here("R", "datasets3.R"))
+
+myiris <- new_dataset (x = iris, 
+                       DataBibentry = irisref, 
+                       Subject = irissubject )
+```
+
+```{r}
+attr(myiris, "Subject")
+```
+
+
+```{r}
+attr(myiris, "DataStructure")
+```
 
 #### The describe General Method
 
@@ -280,11 +299,17 @@ The aim of the `desribe()` method is to provide a simple printing helper functio
 
 Most R packages would create a new `print()` method for this purpose, but in our case, it would create unnecessary complications and risk losing the metadata focus.  The `print()` functions should give an overview of the R object's data and some key metadata; we would like to print out the metadata only. 
 
-#### The release General Method
+```{r describe}
+source(here::here("R", "describe.R"))
+describe(myiris)
+```
 
-The release general method would provide a similar support to the `devtools::release()` function: a step-by-step check of the data and metadata before making it public. In this case, of course, the release would be the dataset embedded in the data.frame-inherited R object.
 
-As earlier stated, we differentiate between the concept of a dataset, which is similar to but not equal to the R object in the users runtime environment. While an abstract concept is R-language independent, an R object in memory is similar in the sense that it cannot be accessed by a third party.
+#### The distribute General Method
+
+The `distribute()` general method would provide a similar support to the `devtools::release()` function: a step-by-step check of the data and metadata before making it public. In this case, of course, the release would be the dataset embedded in the data.frame-inherited R object.
+
+As earlier stated, we differentiate between the concept of a dataset, which is similar to but not equal to the R object in the users runtime environment, and the distribution of the dataset. While an abstract concept is R-language independent, an R object in memory is similar in the sense that it cannot be accessed by a third party.
 
 When we serialise this object into a file and make it available for the public, we must maintain the integrity of the link between the abstract dataset and the actual files, especially if we create paralel a CSV, SPSS, JSON serialisation; or, if we plan to release regularly updated version of the dataset.
 
@@ -297,24 +322,116 @@ The dataset object at the time of serialisation must include metadata that had n
 - The file name, the size of the file, and the URL where it will be made accessible;
 - A Rights statement.
 
-If we serialise the dataset into an RDF resource, this information goes straight into the file; if we release a CSV file in concordance wih the W3C recommendations, we place this metadata into the accompanying JSON file. If we upload the CSV file or the SPSS file to Zenodo, we are expected to fill out this information on Zenodo by hand or the uploading utility we use for this purpose.
+1. We record the information above into the `dataset` object. It can be saved as an `.rds` file, too.
 
+2. If the user wants to serialise the `dataset` into an RDF resource, this information goes straight into the file; if we release a CSV file in concordance with the W3C recommendations, we place this metadata into the accompanying JSON file. 
+
+3. If we upload the CSV file or the SPSS file to Zenodo, we are expected to fill out this information on Zenodo by hand or the uploading utility we use for this purpose.
+
+### Nquad representation
+
+The `convert_to_nquad()` function utilises the `normalise_df()` and `xs_class()` functions, which in turn are inspired by, but heavily changed from some internal functions of the `rdflib()` package, particularly the internal `poor_mans_nquad()`. These functions, after more heavy user testing, could be also included in `rdflib()` as they serve a rather different purpose. 
+
+The current `poor_mans_nquad()` optimises speed and converts any R `data.frame` fast into a syntactically correct Nquad, but in a way that is semantically unrealistically simple: each subject and each predicate has the same prefix, while object have no prefix at all. We are creating a more realistic, and less time-optimised version that is only using base R (no `tidyr` dependency) and correctly parses our `dataaset` objects columns, row names, and attributes into a `WRC Data cube` defined dataset.
+
+```{r beneluxexample}
+benelux <- data.frame ( 
+  id       = as.character(1:3), 
+  refArea  = c("BE", "NE", "LU"), 
+  currency = rep("EUR", 3),
+  obsValue = c(212, 214, 56)
+)
+
+# Context --------------------------
+# sdmx-measure: http://purl.org/linked-data/sdmx/2009/measure#
+# sdmx-dimension: http://purl.org/linked-data/sdmx/2009/dimension#
+
+attr(benelux, "prefix") <- c( 
+  "id" = "eg",
+  "refArea"  = "sdmx-dimension",
+  "currency" = "sdmx-measure",
+  "obsValue" = "sdmx-measure")
+```
+
+The `nquad_statement()` is a simple string pasting function where we add syntactic validation and helpers. 
+
+```{r nquad_statement}
+source(here::here("R", "nquad_statement.R"))
+
+nquad_statement(subject = "eg:myiris", "rdf:type", "<qb:Dataset>")
+```
+```{r rdflib, message="FALSE"}
+# We create a temporary file to save the statments into:
+tempquads <- tempfile()
+
+# We use write.table() instead of base R writeLines() to append 
+# the file with new statements:
+utils::write.table(x = nquad_statement(
+  subject="eg:myiris", predicate="rdf:type", object="<qb:Dataset>"), 
+  file = tempquads, col.names=FALSE, row.names=FALSE, quote=FALSE)
+utils::write.table(x = nquad_statement(
+  "eg:myiris", "dc:description", '"The famous iris dataset"@en'), 
+  file = tempquads, col.names=FALSE, row.names=FALSE, quote=FALSE, 
+  append=TRUE)
+
+# Read the resulting temporary file:
+readLines(tempquads)
+```
+### Changing RDF serialisation formats
+
+we would like to keep the dataset package lean with few dependencies, so any converstions should go into a vignette article that shows the interaction with other packages. 
+
+We can read these simple statements as RDF with the  _rdflib_ package [@boettinger_rdflib_2023]:
+
+```{r rdfparse}
+require(rdflib)
+rdf_parse(tempquads, format="nquads")
+```
+And convert them (i.e., re-serialise them) to any RDF serialisation formats, for example, perhaps the most human-editing friendly Turtle:
+
+```{r iristurtle}
+iris_turtle <- rdf_serialize(
+  rdf = rdf_parse(tempquads, format="nquads"), 
+  format = "turtle", 
+  namespace = c(
+    rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#", 
+    dc = "http://purl.org/dc/elements/1.1/"
+  )
+)
+# To maintain text formatting, use cat() instead of print().
+cat(iris_turtle)
+```
+Or the standard machine-readable output of RDF, i.e, XML:
+
+```{r irisrdfxml}
+iris_rdfxml <- rdf_serialize(
+  rdf = rdf_parse(tempquads, format="nquad"), 
+  format = "rdfxml"
+)
+
+# To maintain text formatting, use cat() instead of print().
+cat(iris_rdfxml)
+```
 ## Conceptualisation
 
 For interoperability, the best is to reuse already existing URIs for the description of variables (or even observations). In those cases we use of SKOS [@miles_skos_2009], as recommended by [QB] [DCAT-AP] and many other applications. The concept should be mapped to a `skos:Concept` and when we want to connect codelists, too, the overall set of admissible values using `skos:ConceptScheme` or `skos:Collection`.
 
 DataCite allows the use of free text, literal keywords, or URIs, when it requires the separate recording of the schemeURI and the valueURI. Perhaps the most used scheme is the [Library of Congress Subject Headings](https://id.loc.gov/authorities/subjects/), which is identified by the  `schemeURI=https://id.loc.gov/authorities/subjects/`; the concept of the dataset with the  `value URI=https://id.loc.gov/authorities/subjects/sh2018002256.html`. Recording the schemeURI and the valueURI is practical for our later use cases, too, but not strictly necessary.
 
+The `context` element is not even defined in DataCite, however, it can be very practical to use prefix abbreviations within the `DataSetDefinition` (see later.)
+
 ```{r myirissubjects}
 
 myirissubject <- list(
   Datasets = list (
-    heading = "Data sets", 
+    heading = "Data sets",
+    context = "LCCH",
     schemeURI = "https://id.loc.gov/authorities/subjects/",
     valueURI = "https://id.loc.gov/authorities/subjects/sh2018002256.htm"
   ), 
   Irises = list (
     heading = "Irises (plants)", 
+    context = "LCCH",
     schemeURI = "https://id.loc.gov/authorities/subjects/", 
     valueURI = "https://id.loc.gov/authorities/subjects/sh85068079.html"
   )
@@ -326,7 +443,7 @@ attr(myiris, "Subject") <- myirissubject
 
 The retrieval of the `iris` subject is straightforward, yet not very ideal if we want to add a matching taxonomic reference to the actual iris species that Anderson was describing. 
 
-```{r}
+```{r subjectattribute}
 attr(myiris, "Subject")$Iris
 ```
 This leads us to the problem of providing a semantically richer description of the dataset that DataCite or Dublin Core, or perhaps even a DCAT would ask from us. Our solution is to allow (and encourage) the recording of more accurate semantic information, but as a separate attribute to the object.
@@ -335,7 +452,11 @@ Technically, we can add any kind of R objects to the attributes, but the portabi
 
 ### Reconciliation with other metadata editing tools and languages
 
-Our initial recommendation is the use of RDF syntax that is easy to hand-edit and can be well represented in base R's character vectors. [RDF 1.1 Turtle](https://www.w3.org/TR/turtle/), [RDF 1.1 N-Triples](https://www.w3.org/TR/n-triples/), [RDF 1.1 N-Quads](https://www.w3.org/TR/n-quads/) can all be represented well with character strings, and with an appropriate parser, they can be read into a graph database. Because the most likely use case of our concept description (and every other metadata descriptions) is that they will be translated to RDF and written to one of these (or other) serialisation format, basically the user can start an interative process of exporting from our R package the already recorded metadata, and add with hand or a more appropriate metadata editor further information to the dataset, which then can be re-attached to the dataset's representation as an R object.
+Our initial recommendation is the use of RDF syntax that is easy to hand-edit and can be well represented in base R's character vectors. [RDF 1.1 Turtle](https://www.w3.org/TR/turtle/), [RDF 1.1 N-Triples](https://www.w3.org/TR/n-triples/), [RDF 1.1 N-Quads](https://www.w3.org/TR/n-quads/) can all be represented well with character strings, and with an appropriate parser, they can be read into a graph database.
+
+The _rdflib_ package [@boettinger_rdflib_2023] already uses N-Quads internally with the `poor_mans_nquad()` internal function. For interoperability among the two packages (and potential co-development) we will use in the _dataset_ package the N-Quads notation.
+
+Because the most likely use case of our concept description (and every other metadata descriptions) is that they will be translated to RDF and written to one of these (or other) serialisation format, basically the user can start an interative process of exporting from our R package the already recorded metadata, and add with hand or a more appropriate metadata editor further information to the dataset, which then can be re-attached to the dataset's representation as an R object.
 
 We can, for example, record a German-language description (taken from [Portal:Statistik/Datensätze](https://de.wikipedia.org/wiki/Portal:Statistik/Datens%C3%A4tze#:~:text=Der%20Iris%2Dflower%2DDatensatz%20besteht,und%20des%20Petalum%20(Kronblatt).) of the German Wikipedia) to the following N-Triple statement in a character string and attach it to the object.
 
@@ -353,7 +474,11 @@ attr(myiris, "N-Triples")
 
 ```
 
-Again, it is unlikely that somebody wants to edit such statements in R, however, once the statements are clearly recorded, it may be a good idea to attach them back to the R object or its `.rds` file representation.
+
+It is unlikely that somebody wants to edit such statements in R, however, once the statements are clearly recorded, it may be a good idea to attach them back to the R object or its `.rds` file representation.
+
+
+
 
 Needless to say that this `N-Triples` section can contain the translated `Subject` list into N-Triples and its extension with further taxonomic information, for example, in a plant species taxonomy [on Wikispecies](https://www.wikidata.org/wiki/Q156901).
 
