@@ -1,5 +1,6 @@
 ---
-title: "Making Datasets Truly Interoperable"
+title: "Making Datasets Truly Interoperable and Reusable in R"
+subtitle: "A working paper to develop the dataset R package (0.1.0)"
 format: 
    html: default
    docx: default
@@ -11,14 +12,20 @@ author:
 editor: visual
 toc: true
 lang: en-GB
+doi: "10.5281/zenodo.10091666"
 bibliography: 
  - bib/datasetdevel.bib
 nocite: |
-  @dublin_core_dcmi_2020, @cyganiak_rdf_2014, @datacite_ev_datacite_2021, @beckett_rdf_2014, @datacite_metadata_scheme_4-4, @prov-o_2013, @DCAT_2, @biron_xml_2004, @N-Quads_2014, @N-Triples_2014
+  @dublin_core_dcmi_2020, @cyganiak_rdf_2014, @datacite_ev_datacite_2021, @beckett_rdf_2014, @datacite_metadata_scheme_4-4, @prov-o_2013, @DCAT_2, @biron_xml_2004, @N-Quads_2014, @N-Triples_2014, @DCAT_3
 ---
 
+{{< pagebreak >}}
 
 The dataset package extension to the R statistical environment aims to ensure that the most important R object that contain a dataset, i.e. a `data.frame` or an inherited `tibble`, `tsibble` or `data.table` contains important metadata for the reuse and validation of the dataset contents. We aim to offer a novel solution to support individuals or small groups of data scientists working in various business, academic or policy research functions who cannot count on the support of librarians, knowledge engineers, and extensive documentation processes.
+
+The development of the _dataset_ R package started in 2022 with a very experimental first release of some code and articles about what this software package extension to the R statistical system should do.  The initial package idea was released on CRAN [@antal_dataset_2023] and send for peer review to [rOpenSci](https://github.com/ropensci/software-review/issues/553). In 2023, a more thorough analysis of the non-functional and functional requirements started. This document aims to review the literature on possible solutions and provide some guidance to start the development. This document is accompanies the development version of the _dataset_ package [@daniel_antal_2022_7440192], which are only sent to CRAN for release when they reach a new level of maturity, and add new functionality that is well-tested and documented.
+
+_You can refer to this document with DOI [10.5281/zenodo.10091666](https://doi.org/10.5281/zenodo.10091666)_.
 
 ## Problem statement
 
@@ -26,7 +33,7 @@ A dataset in its tidy form has enough semantic information to allow a knowledgea
 
 The tidy data format contains the semantics necessary for the analyst to work with the dataset in a pipeline [@wickham_tidy_2014]. This amount of semantic information is usually not enough for interoperability or reuse: years after, even the initial user or analyst may struggle to understand the concepts that the data is supposed to represent; the provenance of the data becomes unclear; and a third-party user will almost certainly require further metadata to use the dataset. Like relational databases, a third-party user has difficulty accessing the data without a user-friendly schema description.
 
-The FAIR recommendations focus on describing the dataset as a whole when released and mandate the use of Dublin Core (DC) or DataCite [] descriptive metadata. Our critique of this approach is that librarians developed DC with a focus on texts; DataCite, while considering datasets, also wanted to be format-agnostic and offer a solution that can describe texts, still images, video and datasets alike. While using DC and DataCite can significantly increase findability and encourage proper attribution, they could be more helpful for interoperability and reuse in the case of datasets. A user can immediately reuse a book in her domain of expertise if it is written in a natural language she understands. This is not the case with a dataset.
+The FAIR recommendations focus on describing the dataset as a whole when released and mandate the use of Dublin Core (DC) or DataCite descriptive metadata [@dublin_core_dcmi_2020; @datacite_ev_datacite_2021]. Our critique of the approach of describing datasets with DC or DataCite alone is that librarians developed DC with a focus on texts; DataCite, while considering datasets, also wanted to be format-agnostic and offer a solution that can describe texts, still images, video and datasets alike. While using DC and DataCite can significantly increase findability and encourage proper attribution, they could be more helpful for interoperability and reuse in the case of datasets. A user can immediately reuse a book in her domain of expertise if it is written in a natural language she understands. This is not the case with a dataset.
 
 Data is only informative with metadata. The kind of metadata that is required to read and functionally use a dataset is not the descriptive metadata that helps find the file containing the dataset but metadata that makes the numbers and their organisation intelligible for the data analyst. How are observations organised in the dataset? What do columns mean? Are the numbers expressed in euros or dollars? Kilograms or tons? Without such semantic information, the dataset cannot be reused. It is also barely interoperable because addition into a relational or graph database is hard or impossible.
 
@@ -34,9 +41,14 @@ In R, most metadata packages, for example, dataspice [@dataspice] add the metada
 
 The problem with this approach is that for interoperability and reuse reasons, we often serialise the contents of R objects into more interoperable formats, such as CSV or Excel files. At this point, we will have to work with at least two files: a data and a metadata file. For example, the W3C recommendation for releasing data in CSV format is to accompany the data with semantic and other metadata in an accompanying JSON file [@tennison_csv_2016].
 
-In a well-regulated working environment with large IT and documentation resources, our problems are well handled by extensive processes and procedures. GSIM is a statistical vocabulary that harmonises the uses of the SDMX statistical data standard [@sdmx_information_model_2021]
+A broader problem that we will describe in more detail is that a dataset, even a _tidy dataset_ does not contain enough semantic information for re-use. A reuse by a third party, or even by the creator of the dataset after 1-2 years requires at least a precise description of the _meaning_ of variables and _codelists_. Various metadata standards and models, such as _DCAT_ or the _W3C Data cube_ (strongly aligned with the SDMX Datacube model) and _Schema.org_ require additional metadata on the codelists and variable concepts used in the dataset. [@DCAT_2; @cyganiak_rdf_2014] Additionally, they recognise the fact that for greater interoperability, the same dataset may be serialised into different file formats (for example, `.csv`, `.xlsx`, and `.sav` files) with essentially the same meaning but conforming the differnet ways how these file formats represent data and metadata. While DataCite and Dublin Core may create a separate data record for each file verison, it is important to connect the same data file with different file formats in a data catalogue. Even in Dublin Core or DataCite, a diligent record keeping would record the _relation_ of the CSV and Excel representation of the dataset with the very same meaning.
+
+Therefore, we would like to provide an intermediate R user with the opportunity to correctly record metadata for greater interoperability and real third-party reuse. In a well-regulated working environment with large IT and documentation resources, our problems are well handled by extensive processes and procedures. GSIM is a statistical vocabulary that harmonises the uses of the SDMX statistical data standard [@sdmx_information_model_2021]
 and the DDI [@ddi_alliance_ddi-codebook_2012], a standard for documenting, coding and maintaining microdata files.  Most R users do not work in such a well-regulated environment, and we want to give them a practical tool to improve their process documentation for much-improved interoperability and reusability with the introduction of the dataset R package [@antal_dataset_2023].
 
+## Requirements and usability
+
+- Rebeca, intermediate R user, able to use the _eurostat_ package and _tidyverse_, wants to become FAIR compliant: [eurostat-user1](https://music.dataobservatory.eu/documents/open_music_europe/dataset-development/stories/eurostat-user1.html) -- source [stories/eurostat-user1.qmd](https://github.com/dataobservatory-eu/dataset-development/stories/)
 
 ## Literature
 
@@ -45,8 +57,6 @@ Dublin Core and DataCite are metadata standards used in open science and librari
 The [DataCite to Dublin Core Mapping 4.4](https://schema.datacite.org/meta/kernel-4.4/doc/DataCite_DublinCore_Mapping.pdf) is very helpful in generalising our package, because we do not want to simply implement DataCite (or Dublin Core.)
 
 The most relevant work for designing the metadata aspects of our new class is the unofficial CiteDCAT-AP specification of the Joint Research Centre of the European Commission [@perego_datacite_2021], which is seeking a solution to bridge the library-oriented approach of the European FAIR applications and the data cataloging approach of statisticians and open data providers by trying to create a mapping of DataCite and [DCAT-AP](https://joinup.ec.europa.eu/collection/semic-support-centre/solution/dcat-application-profile-data-portals-europe/release/300), the DCAT Application profile for data portals in Europe, a specification based on W3C's Data Catalogue vocabulary ([DCAT](http://www.w3.org/TR/vocab-dcat/)).
-
-[@boettinger_rdflib_2023]
 
 ## Methodology
 
@@ -360,7 +370,7 @@ source(here::here("R", "nquad_statement.R"))
 
 nquad_statement(subject = "eg:myiris", "rdf:type", "<qb:Dataset>")
 ```
-```{r rdflib, message="FALSE"}
+```{r rdflib, message="FALSE", warning="FALSE"}
 # We create a temporary file to save the statments into:
 tempquads <- tempfile()
 
@@ -418,14 +428,14 @@ For interoperability, the best is to reuse already existing URIs for the descrip
 
 DataCite allows the use of free text, literal keywords, or URIs, when it requires the separate recording of the schemeURI and the valueURI. Perhaps the most used scheme is the [Library of Congress Subject Headings](https://id.loc.gov/authorities/subjects/), which is identified by the  `schemeURI=https://id.loc.gov/authorities/subjects/`; the concept of the dataset with the  `value URI=https://id.loc.gov/authorities/subjects/sh2018002256.html`. Recording the schemeURI and the valueURI is practical for our later use cases, too, but not strictly necessary.
 
-The `context` element is not even defined in DataCite, however, it can be very practical to use prefix abbreviations within the `DataSetDefinition` (see later.)
+The `namespace` element is not even defined in DataCite, however, it can be very practical to use prefix abbreviations within the `DataSetDefinition` (see later) and used together with `rdf_serialise`.
 
 ```{r myirissubjects}
 
 myirissubject <- list(
   Datasets = list (
     heading = "Data sets",
-    context = "LCCH",
+    namespace = "LCCH",
     schemeURI = "https://id.loc.gov/authorities/subjects/",
     valueURI = "https://id.loc.gov/authorities/subjects/sh2018002256.htm"
   ), 
@@ -476,9 +486,6 @@ attr(myiris, "N-Triples")
 
 
 It is unlikely that somebody wants to edit such statements in R, however, once the statements are clearly recorded, it may be a good idea to attach them back to the R object or its `.rds` file representation.
-
-
-
 
 Needless to say that this `N-Triples` section can contain the translated `Subject` list into N-Triples and its extension with further taxonomic information, for example, in a plant species taxonomy [on Wikispecies](https://www.wikidata.org/wiki/Q156901).
 
