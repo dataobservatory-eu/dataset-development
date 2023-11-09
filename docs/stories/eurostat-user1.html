@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Rebeca: intermediate R/eurostat user</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="eurostat-user1_files/libs/clipboard/clipboard.min.js"></script>
+<script src="eurostat-user1_files/libs/quarto-html/quarto.js"></script>
+<script src="eurostat-user1_files/libs/quarto-html/popper.min.js"></script>
+<script src="eurostat-user1_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="eurostat-user1_files/libs/quarto-html/anchor.min.js"></script>
+<link href="eurostat-user1_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="eurostat-user1_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="eurostat-user1_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="eurostat-user1_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="eurostat-user1_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Rebeca: intermediate R/eurostat user</h1>
+<p class="subtitle lead">Release a simple, FAIR dataset obtained with the eurostat package.</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="eurostat-user" class="level2">
+<h2 class="anchored" data-anchor-id="eurostat-user">Eurostat user</h2>
+<p>This is a usability and requirement scenario for <a href="https://music.dataobservatory.eu/documents/open_music_europe/dataset-development/dataset-working-paper.html">Making Datasets Truly Interoperable in R</a> — source: <a href="https://github.com/dataobservatory-eu/dataset-development/stories/">dataset-working-paper.qmd</a></p>
+<p><strong>Persona:</strong> Rebeca is an intermediate R user who is familiar with the <code>tidyverse</code> and the <code>eurostat</code> package, and the basic concept of tidy data. She works with cultural statistics and wants to make her work FAIR and link to other scientists’ work.</p>
+<p><strong>Before:</strong> Rebeca is able to download the <em>Cultural employment by sex</em> Eurostat statistics with the <em>eurostat</em> R pacakage:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(eurostat)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>cult_emp_sex <span class="ot">&lt;-</span> <span class="fu">get_eurostat</span>(<span class="st">"cult_emp_sex"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(cult_emp_sex)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>tibble [2,538 × 5] (S3: tbl_df/tbl/data.frame)
+ $ sex   : chr [1:2538] "F" "F" "F" "F" ...
+ $ unit  : chr [1:2538] "PC_EMP" "PC_EMP" "PC_EMP" "PC_EMP" ...
+ $ geo   : chr [1:2538] "AT" "BE" "BG" "CH" ...
+ $ time  : Date[1:2538], format: "2022-01-01" "2022-01-01" ...
+ $ values: num [1:2538] 4.2 4.3 3.3 5 5 4.2 4.2 4.9 5.1 4.5 ...</code></pre>
+</div>
+</div>
+<p>… and create a derived dataset showing the annualised cultural employment growth rates of European countries from the original <a href="https://ec.europa.eu/eurostat/databrowser/view/cult_emp_sex/default/table?lang=en">cult_emp_sex</a> dataaset with <em>tidyverse</em> functions.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>cult_emp_growth_sex <span class="ot">&lt;-</span> cult_emp_sex <span class="sc">%&gt;%</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span> (time <span class="sc">%in%</span> <span class="fu">c</span>(<span class="fu">as.Date</span>(<span class="st">"2022-01-01"</span>), <span class="fu">as.Date</span>(<span class="st">"2013-01-01"</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span> ( <span class="at">time_var =</span> <span class="fu">paste0</span>(<span class="st">"Y"</span>, <span class="fu">substr</span>(<span class="fu">as.character</span>(time), <span class="dv">1</span>,<span class="dv">4</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span> (<span class="sc">-</span>time) <span class="sc">%&gt;%</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span> ( <span class="at">names_from =</span> <span class="st">"time_var"</span>, <span class="at">values_from =</span> <span class="st">"values"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">annaul_growth =</span> (Y2022<span class="sc">/</span>Y2013)<span class="sc">^</span><span class="fl">0.1</span> ) </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>cult_emp_growth_sex </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 216 × 6
+   sex   unit   geo   Y2022 Y2013 annaul_growth
+   &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt;         &lt;dbl&gt;
+ 1 F     PC_EMP AT      4.2   4.1         1.00 
+ 2 F     PC_EMP BE      4.3   3.5         1.02 
+ 3 F     PC_EMP BG      3.3   3.2         1.00 
+ 4 F     PC_EMP CH      5     5.4         0.992
+ 5 F     PC_EMP CY      5     3.2         1.05 
+ 6 F     PC_EMP CZ      4.2   4.3         0.998
+ 7 F     PC_EMP DE      4.2   4.2         1    
+ 8 F     PC_EMP DK      4.9   5           0.998
+ 9 F     PC_EMP EE      5.1   6.5         0.976
+10 F     PC_EMP EL      4.5   3.7         1.02 
+# ℹ 206 more rows</code></pre>
+</div>
+</div>
+<p>Until now, she would save these results into a <code>.csv</code> file and upload it to her research website and Zenodo manually. The proaboutblem with this approach that users who download the <code>csv</code> file from her website do not have a clear idea what these variables stand for, or what is the provenance of the work. Such information is available on Zenodo repository, but users who download the <code>.csv</code> file may forget about it.</p>
+<p><strong>After</strong>: Rebeca can save the <code>cult_emp_growth_sex</code> dataset in R into an <code>.rds</code> file that contains all the DataCite or Dublin Core metadata that is required on Zenodo for publication. She can export this <code>cult_emp_growth_sex.rds</code> file into a CSV format that meets the W3C consortium’s standard on publishing CSV with machine-readable JSON metadata. She can also serialize for long-term usability the <code>cult_emp_growth_sex</code> it into an RDF schema that contains all the semantic information to connect this dataset to other data that use the SDMX semantic standards, such as other datasets of Eurostat, the World Bank or OECD.</p>
+</section>
+<section id="functional-requirements" class="level2">
+<h2 class="anchored" data-anchor-id="functional-requirements">Functional requirements</h2>
+<ol type="1">
+<li><p>The <em>eurostat</em> package retains the provenance metadata, i.e., the descriptive metadata and the semantics of the Eurostat original <code>cult_emp_sex</code>. <em>The dataset package is used by eurostat to record the metadata from the source</em></p></li>
+<li><p>The <em>eurostat</em> package retains the valid range and the codelist of each variable, in this case, <code>sex</code>, <code>unit</code>, <code>geo</code>, <code>time</code>, and the measured values. <em>The dataset package is used by eurostat to record the codelists from the source</em></p></li>
+<li><p>Rebeca can add her own descriptive metadata, i.e., as the creator of the derived <code>cult_emp_growth_sex</code> dataset in a way that <code>cult_emp_growth</code> becomes a related item with the derivative work; Rebeca is recorded as the creator.</p></li>
+<li><p>The <em>eurostat</em> package is added to the related items metadata as a software agent that was used in the creation of the <code>cult_emp_growth_sex</code> derived dataset. <em>The dataset package has a function that adds related items metadata.</em></p></li>
+<li><p>Rebeca can export the <code>cult_emp_growth_sex</code> dataset into an RDF resource which contains the data, its semantic description, its data structure, the provenance and related items data, and her desciptive metadata as required by FAIR. <em>The dataset package has a release function that can be used.</em></p></li>
+<li><p>Rebeca can export the <code>cult_emp_growth_sex</code> dataset into a standard CSV file with standard JSON metadata which contains the data, its semantic description, its data structure, the provenance and related items data, and her desciptive metadata as required by FAIR. <em>The dataset package has a release function that can be used.</em></p></li>
+<li><p>Rebeca can release the package via the connector <a href="https://cran.r-project.org/web/packages/zen4R/index.html">zen4r</a> to the Zenodo repository. <em>This is explained in a vignette article.</em></p></li>
+</ol>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

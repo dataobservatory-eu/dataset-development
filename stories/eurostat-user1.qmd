@@ -7,6 +7,8 @@ editor: visual
 
 ## Eurostat user
 
+This is a usability and requirement scenario for [Making Datasets Truly Interoperable in R](https://music.dataobservatory.eu/documents/open_music_europe/dataset-development/dataset-working-paper.html) --- source:  [dataset-working-paper.qmd](https://github.com/dataobservatory-eu/dataset-development/stories/)
+
 **Persona:** Rebeca is an intermediate R user who is familiar with the `tidyverse` and the `eurostat` package, and the basic concept of tidy data. She works with cultural statistics and wants to make her work FAIR and link to other scientists' work.
 
 **Before:** Rebeca is able to download the _Cultural employment by sex_ Eurostat statistics with the _eurostat_ R pacakage:
