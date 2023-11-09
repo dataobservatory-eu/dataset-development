@@ -25,7 +25,7 @@ The dataset package extension to the R statistical environment aims to ensure th
 
 The development of the _dataset_ R package started in 2022 with a very experimental first release of some code and articles about what this software package extension to the R statistical system should do.  The initial package idea was released on CRAN [@antal_dataset_2023] and send for peer review to [rOpenSci](https://github.com/ropensci/software-review/issues/553). In 2023, a more thorough analysis of the non-functional and functional requirements started. This document aims to review the literature on possible solutions and provide some guidance to start the development. This document is accompanies the development version of the _dataset_ package [@daniel_antal_2022_7440192], which are only sent to CRAN for release when they reach a new level of maturity, and add new functionality that is well-tested and documented.
 
-_You can refer to this document with DOI [10.5281/zenodo.10091666](https://doi.org/10.5281/zenodo.10091666)_.
+_You can refer to this document with DOI [10.5281/zenodo.10091666](https://doi.org/10.5281/zenodo.10091666) On GitHub this is _release [0.1.0](https://github.com/dataobservatory-eu/dataset-development/releases/tag/0.1.0)_. 
 
 ## Problem statement
 

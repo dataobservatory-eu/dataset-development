@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-GB" xml:lang="en-GB"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Daniel Antal">
+
+<title>Making Datasets Truly Interoperable and Reusable in R</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="dataset-working-paper_files/libs/clipboard/clipboard.min.js"></script>
+<script src="dataset-working-paper_files/libs/quarto-html/quarto.js"></script>
+<script src="dataset-working-paper_files/libs/quarto-html/popper.min.js"></script>
+<script src="dataset-working-paper_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="dataset-working-paper_files/libs/quarto-html/anchor.min.js"></script>
+<link href="dataset-working-paper_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="dataset-working-paper_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="dataset-working-paper_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="dataset-working-paper_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="dataset-working-paper_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#problem-statement" id="toc-problem-statement" class="nav-link active" data-scroll-target="#problem-statement">Problem statement</a></li>
+  <li><a href="#requirements-and-usability" id="toc-requirements-and-usability" class="nav-link" data-scroll-target="#requirements-and-usability">Requirements and usability</a></li>
+  <li><a href="#literature" id="toc-literature" class="nav-link" data-scroll-target="#literature">Literature</a></li>
+  <li><a href="#methodology" id="toc-methodology" class="nav-link" data-scroll-target="#methodology">Methodology</a>
+  <ul class="collapse">
+  <li><a href="#literal-values" id="toc-literal-values" class="nav-link" data-scroll-target="#literal-values">Literal values</a></li>
+  <li><a href="#agents" id="toc-agents" class="nav-link" data-scroll-target="#agents">Agents</a></li>
+  <li><a href="#dates" id="toc-dates" class="nav-link" data-scroll-target="#dates">Dates</a></li>
+  <li><a href="#identifiers" id="toc-identifiers" class="nav-link" data-scroll-target="#identifiers">Identifiers</a></li>
+  <li><a href="#related-items" id="toc-related-items" class="nav-link" data-scroll-target="#related-items">Related Items</a></li>
+  <li><a href="#subject" id="toc-subject" class="nav-link" data-scroll-target="#subject">Subject</a></li>
+  <li><a href="#data-structure-definition" id="toc-data-structure-definition" class="nav-link" data-scroll-target="#data-structure-definition">Data Structure Definition</a></li>
+  <li><a href="#distribution" id="toc-distribution" class="nav-link" data-scroll-target="#distribution">Distribution</a></li>
+  </ul></li>
+  <li><a href="#implementation" id="toc-implementation" class="nav-link" data-scroll-target="#implementation">Implementation</a>
+  <ul class="collapse">
+  <li><a href="#metadata-management" id="toc-metadata-management" class="nav-link" data-scroll-target="#metadata-management">Metadata Management</a></li>
+  <li><a href="#subjects" id="toc-subjects" class="nav-link" data-scroll-target="#subjects">Subjects</a></li>
+  <li><a href="#the-dataset-s3-class" id="toc-the-dataset-s3-class" class="nav-link" data-scroll-target="#the-dataset-s3-class">The dataset S3 Class</a></li>
+  <li><a href="#nquad-representation" id="toc-nquad-representation" class="nav-link" data-scroll-target="#nquad-representation">Nquad representation</a></li>
+  <li><a href="#changing-rdf-serialisation-formats" id="toc-changing-rdf-serialisation-formats" class="nav-link" data-scroll-target="#changing-rdf-serialisation-formats">Changing RDF serialisation formats</a></li>
+  </ul></li>
+  <li><a href="#conceptualisation" id="toc-conceptualisation" class="nav-link" data-scroll-target="#conceptualisation">Conceptualisation</a>
+  <ul class="collapse">
+  <li><a href="#reconciliation-with-other-metadata-editing-tools-and-languages" id="toc-reconciliation-with-other-metadata-editing-tools-and-languages" class="nav-link" data-scroll-target="#reconciliation-with-other-metadata-editing-tools-and-languages">Reconciliation with other metadata editing tools and languages</a></li>
+  <li><a href="#connection-to-foundational-ontologies" id="toc-connection-to-foundational-ontologies" class="nav-link" data-scroll-target="#connection-to-foundational-ontologies">Connection to Foundational Ontologies</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="dataset-working-paper.docx"><i class="bi bi-file-word"></i>MS Word</a></li><li><a href="dataset-working-paper.epub"><i class="bi bi-file"></i>ePub</a></li><li><a href="dataset-working-paper.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Making Datasets Truly Interoperable and Reusable in R</h1>
+<p class="subtitle lead">A working paper to develop the dataset R package (0.1.0)</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Daniel Antal <a href="https://orcid.org/0000-0003-1689-0557" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+          </div>
+  </div>
+    
+  
+    
+    <div>
+    <div class="quarto-title-meta-heading">Doi</div>
+    <div class="quarto-title-meta-contents">
+      <p class="doi">
+        <a href="https://doi.org/10.5281/zenodo.10091666">10.5281/zenodo.10091666</a>
+      </p>
+    </div>
+  </div>
+  </div>
+  
+
+</header>
+
+<div style="page-break-after: always;"></div>
+<p>The dataset package extension to the R statistical environment aims to ensure that the most important R object that contain a dataset, i.e.&nbsp;a <code>data.frame</code> or an inherited <code>tibble</code>, <code>tsibble</code> or <code>data.table</code> contains important metadata for the reuse and validation of the dataset contents. We aim to offer a novel solution to support individuals or small groups of data scientists working in various business, academic or policy research functions who cannot count on the support of librarians, knowledge engineers, and extensive documentation processes.</p>
+<p>The development of the <em>dataset</em> R package started in 2022 with a very experimental first release of some code and articles about what this software package extension to the R statistical system should do. The initial package idea was released on CRAN <span class="citation" data-cites="antal_dataset_2023">(<a href="#ref-antal_dataset_2023" role="doc-biblioref">Antal 2023</a>)</span> and send for peer review to <a href="https://github.com/ropensci/software-review/issues/553">rOpenSci</a>. In 2023, a more thorough analysis of the non-functional and functional requirements started. This document aims to review the literature on possible solutions and provide some guidance to start the development. This document is accompanies the development version of the <em>dataset</em> package <span class="citation" data-cites="daniel_antal_2022_7440192">(<a href="#ref-daniel_antal_2022_7440192" role="doc-biblioref">Antal 2022b</a>)</span>, which are only sent to CRAN for release when they reach a new level of maturity, and add new functionality that is well-tested and documented.</p>
+<p>_You can refer to this document with DOI <a href="https://doi.org/10.5281/zenodo.10091666">10.5281/zenodo.10091666</a> On GitHub this is <em>release <a href="https://github.com/dataobservatory-eu/dataset-development/releases/tag/0.1.0">0.1.0</a></em>.</p>
+<section id="problem-statement" class="level2">
+<h2 class="anchored" data-anchor-id="problem-statement">Problem statement</h2>
+<p>A dataset in its tidy form has enough semantic information to allow a knowledgeable to easily create pipelines to process or manipulate the data in a reproducible way. The tidy data form is a statistical representation of Cobb’s 3rd normal form, which is ideal for incorporation into a relational database. Most heavy R users will come across this concept sooner or later: the modernisation of the R language and the tidyverse packages, which are used in all of our packages that we want to modernise, all use this concept.</p>
+<p>The tidy data format contains the semantics necessary for the analyst to work with the dataset in a pipeline <span class="citation" data-cites="wickham_tidy_2014">(<a href="#ref-wickham_tidy_2014" role="doc-biblioref">Wickham 2014</a>)</span>. This amount of semantic information is usually not enough for interoperability or reuse: years after, even the initial user or analyst may struggle to understand the concepts that the data is supposed to represent; the provenance of the data becomes unclear; and a third-party user will almost certainly require further metadata to use the dataset. Like relational databases, a third-party user has difficulty accessing the data without a user-friendly schema description.</p>
+<p>The FAIR recommendations focus on describing the dataset as a whole when released and mandate the use of Dublin Core (DC) or DataCite descriptive metadata <span class="citation" data-cites="dublin_core_dcmi_2020 datacite_ev_datacite_2021">(<a href="#ref-dublin_core_dcmi_2020" role="doc-biblioref">Dublin Core 2020</a>; <a href="#ref-datacite_ev_datacite_2021" role="doc-biblioref"><span>‘<span>DataCite</span> to Dublin Core Mapping 4.4’</span>, n.d.</a>)</span>. Our critique of the approach of describing datasets with DC or DataCite alone is that librarians developed DC with a focus on texts; DataCite, while considering datasets, also wanted to be format-agnostic and offer a solution that can describe texts, still images, video and datasets alike. While using DC and DataCite can significantly increase findability and encourage proper attribution, they could be more helpful for interoperability and reuse in the case of datasets. A user can immediately reuse a book in her domain of expertise if it is written in a natural language she understands. This is not the case with a dataset.</p>
+<p>Data is only informative with metadata. The kind of metadata that is required to read and functionally use a dataset is not the descriptive metadata that helps find the file containing the dataset but metadata that makes the numbers and their organisation intelligible for the data analyst. How are observations organised in the dataset? What do columns mean? Are the numbers expressed in euros or dollars? Kilograms or tons? Without such semantic information, the dataset cannot be reused. It is also barely interoperable because addition into a relational or graph database is hard or impossible.</p>
+<p>In R, most metadata packages, for example, dataspice <span class="citation" data-cites="dataspice">(<a href="#ref-dataspice" role="doc-biblioref">Boettiger et al. 2021</a>)</span> add the metadata to a new dataset, creating an initial separation of data and metadata. Our approach, i.e., adding metadata, including rich semantics, into the attributes metadata fields of an object, keeps the data and its crucial metadata attached. This creates sufficient interoperability and reuse within the R ecosystem, provided the user serialises the data and metadata into a native <code>.rds</code> file.</p>
+<p>The problem with this approach is that for interoperability and reuse reasons, we often serialise the contents of R objects into more interoperable formats, such as CSV or Excel files. At this point, we will have to work with at least two files: a data and a metadata file. For example, the W3C recommendation for releasing data in CSV format is to accompany the data with semantic and other metadata in an accompanying JSON file <span class="citation" data-cites="tennison_csv_2016">(<a href="#ref-tennison_csv_2016" role="doc-biblioref">Tennison 2016</a>)</span>.</p>
+<p>A broader problem that we will describe in more detail is that a dataset, even a <em>tidy dataset</em> does not contain enough semantic information for re-use. A reuse by a third party, or even by the creator of the dataset after 1-2 years requires at least a precise description of the <em>meaning</em> of variables and <em>codelists</em>. Various metadata standards and models, such as <em>DCAT</em> or the <em>W3C Data cube</em> (strongly aligned with the SDMX Datacube model) and <em>Schema.org</em> require additional metadata on the codelists and variable concepts used in the dataset. <span class="citation" data-cites="DCAT_2 cyganiak_rdf_2014">(<a href="#ref-DCAT_2" role="doc-biblioref">Albertoni et al. 2020</a>; <a href="#ref-cyganiak_rdf_2014" role="doc-biblioref">W3C 2014</a>)</span> Additionally, they recognise the fact that for greater interoperability, the same dataset may be serialised into different file formats (for example, <code>.csv</code>, <code>.xlsx</code>, and <code>.sav</code> files) with essentially the same meaning but conforming the differnet ways how these file formats represent data and metadata. While DataCite and Dublin Core may create a separate data record for each file verison, it is important to connect the same data file with different file formats in a data catalogue. Even in Dublin Core or DataCite, a diligent record keeping would record the <em>relation</em> of the CSV and Excel representation of the dataset with the very same meaning.</p>
+<p>Therefore, we would like to provide an intermediate R user with the opportunity to correctly record metadata for greater interoperability and real third-party reuse. In a well-regulated working environment with large IT and documentation resources, our problems are well handled by extensive processes and procedures. GSIM is a statistical vocabulary that harmonises the uses of the SDMX statistical data standard <span class="citation" data-cites="sdmx_information_model_2021">(<a href="#ref-sdmx_information_model_2021" role="doc-biblioref">SDMX 2021</a>)</span> and the DDI <span class="citation" data-cites="ddi_alliance_ddi-codebook_2012">(<a href="#ref-ddi_alliance_ddi-codebook_2012" role="doc-biblioref">Alliance 2012</a>)</span>, a standard for documenting, coding and maintaining microdata files. Most R users do not work in such a well-regulated environment, and we want to give them a practical tool to improve their process documentation for much-improved interoperability and reusability with the introduction of the dataset R package <span class="citation" data-cites="antal_dataset_2023">(<a href="#ref-antal_dataset_2023" role="doc-biblioref">Antal 2023</a>)</span>.</p>
+</section>
+<section id="requirements-and-usability" class="level2">
+<h2 class="anchored" data-anchor-id="requirements-and-usability">Requirements and usability</h2>
+<ul>
+<li>Rebeca, intermediate R user, able to use the <em>eurostat</em> package and <em>tidyverse</em>, wants to become FAIR compliant: <a href="https://music.dataobservatory.eu/documents/open_music_europe/dataset-development/stories/eurostat-user1.html">eurostat-user1</a> – source <a href="https://github.com/dataobservatory-eu/dataset-development/stories/">stories/eurostat-user1.qmd</a></li>
+</ul>
+</section>
+<section id="literature" class="level2">
+<h2 class="anchored" data-anchor-id="literature">Literature</h2>
+<p>Dublin Core and DataCite are metadata standards used in open science and libraries to make the datasets findable and attributable. They are instrumental in being found in libraries and their repositories, but these differ from the typical places where we would look for quality datasets. Therefore, we want to add further descriptive metadata that complies with the W3C DataCatalogue definition that large data providers and statistical offices use. We also want to comply with Schema.org’s definition of the Dataset and DataDownload, because this is the descriptive metadata standard that internet search engines use.</p>
+<p>The <a href="https://schema.datacite.org/meta/kernel-4.4/doc/DataCite_DublinCore_Mapping.pdf">DataCite to Dublin Core Mapping 4.4</a> is very helpful in generalising our package, because we do not want to simply implement DataCite (or Dublin Core.)</p>
+<p>The most relevant work for designing the metadata aspects of our new class is the unofficial CiteDCAT-AP specification of the Joint Research Centre of the European Commission <span class="citation" data-cites="perego_datacite_2021">(<a href="#ref-perego_datacite_2021" role="doc-biblioref">Perego et al. 2021</a>)</span>, which is seeking a solution to bridge the library-oriented approach of the European FAIR applications and the data cataloging approach of statisticians and open data providers by trying to create a mapping of DataCite and <a href="https://joinup.ec.europa.eu/collection/semic-support-centre/solution/dcat-application-profile-data-portals-europe/release/300">DCAT-AP</a>, the DCAT Application profile for data portals in Europe, a specification based on W3C’s Data Catalogue vocabulary (<a href="http://www.w3.org/TR/vocab-dcat/">DCAT</a>).</p>
+</section>
+<section id="methodology" class="level2">
+<h2 class="anchored" data-anchor-id="methodology">Methodology</h2>
+<p>In our methodology, we first follow existing mappings between various metadata standards. To describe the dataset and further map them to the R language and ecosystem. This will undoubtedly help publication, findability and accessibility but adds less to the interoperability and reuse. While finding a book in a natural language that we know in a library lends itself to a natural way to reuse the book (start reading it), an analyst finding a dataset in a library or a data catalogue will need metadata to begin using the find.</p>
+<p>The librarian DataCite and Dublin Core talk about a dataset file (or printed format) that is stored in a library; SDMX and DCAT talk about an abstract dataset that can be accessed (together with its represented meaning) through various file serialisations that may take a different format in an API designed for machines and flat file intended for download by humans. SDMX and DCAT particularly, and the not data-focused Schema.org partly help by providing metadata about the data. They allow opening up the hoods of the dataset file and seeing what is inside. Dublin Core and DataCite do this only in two aspects: by choosing to describe an overarching Subject of the dataset as a whole and by describing the geographical area the dataset contains information about.</p>
+<p>DCAT also describes the temporal frame (the times of the observations in the dataset); SDMX aims to describe every variable and, if needed, every observation in the dataset, including the geographical and time coverage of the observations.</p>
+<p>We will come back to this problem when we open the hoods of the dataset, but we observe that adding every variable (column) subject to the subject definition of the dataset itself would be very misleading. All statistical datasets contain a description of observation time and geography; however, adding time and geography to the Subject would not be helpful to finding a dataset about gender pay gap differences (which, of course, have a geographical and time dimension.) Some concept descriptions from under the hood should go to the Geographical coverage of the dataset or the Temporal coverage, and some to the Subject. There may be some technical concepts that do not need to be mapped to DataCite or Dublin Core in any way.</p>
+<p>Let us start with the simplest mapping. We only want to describe datasets, so the mandatory DataCite property <code>resourceType</code> (which corresponds to Type in Dublin Core) can be expressed as constant.</p>
+<section id="literal-values" class="level3">
+<h3 class="anchored" data-anchor-id="literal-values">Literal values</h3>
+<p>Several DataCite properties can be expressed with literal values.</p>
+<p>From the mandatory fields: - <code>Title</code>, which is a literal string.</p>
+<ul>
+<li><code>PublicationYear</code> is a literal integer or an integer representing a year.</li>
+</ul>
+<p>The <code>utils</code> package (which is distributed with very R installation, it is maintained by the R-core team) includes the <code>bibentry()</code> function which is intended to be used with bibliographic entries, and therefore can be mapped to Dublin Core and more or less to DataCite, too. The <code>Title</code> field can be recorded as <code>bibentry(title = "" )</code> and <code>PublicationYear</code> as <code>bibentry(year = "" )</code>.</p>
+<p>DataCite and DublinCore differ in the way we can add alternative titles, such as subtitles, translation to a record, but adding a <code>Title</code> is a necessity in both cases.</p>
+<p>From the recommended and optimal fields:</p>
+<ul>
+<li><code>Version</code>, which is a literal string.</li>
+</ul>
+<p><code>Version</code> is not present in Dublin Core, but it is present in SDMX. Version can be added as <code>bibentry(version = "" )</code> as a literal string.</p>
+<p>In these cases, we only need to ensure that the atomic classes of the R objects representing them are correctly translated into XML.</p>
+</section>
+<section id="agents" class="level3">
+<h3 class="anchored" data-anchor-id="agents">Agents</h3>
+<p>An important group of properties related to agents, i.e., people and institutions, who are related to the dataset in different roles. As DataCite (and Dublin Core) work mainly with library catalogues, often dating back before the semantic web, their representation of people and institutions could be made richer; CiteDCAT-AP implicitly builds an Agent model to meet the various metadata standard’s expressiveness levels.</p>
+<p>Recording agency with more semantics is a very important step towards giving an account of data provenance, which includes reviewability, and eventually can foster replicability and trust in the data: we should know who, in what capacity did what with the data; for example, who was the person who ran a software agent to impute missing numbers. Modelling data provenance is not independent of the (business) process of the data creation, and it is inherently very complex. Our dataset package is not a data provenance tracking tool; but a more complex modeling of agency can open ways to these important aspects of reproducible research.</p>
+<p>In R, we consider that <code>utils::person()</code> already has an R model that is used to contain agency information which is used embedded to bibentry objects, for example, describing a person as author with affiliations.</p>
+<p>CRAN generally uses the comment field to record unique identifiers such as ORCiD URIs. Because this model is used in the entire R ecosystem, we will rely on it to record data for agents and provide a parser into RDF. This agent model should be able to serve the following properties:</p>
+<ul>
+<li>Creator (mandatory in DataCite)</li>
+<li>Publisher (mandatory in DataCite)</li>
+<li>Contributor (recommended) - in DataCite, they can take many roles; in a statistical process, these roles can be even further described.</li>
+<li>Related item’s children, which are again the Creator, Publisher and Contributor.</li>
+</ul>
+</section>
+<section id="dates" class="level3">
+<h3 class="anchored" data-anchor-id="dates">Dates</h3>
+<p>The representation of Dates is not uniform in R; the base R solutions are rather cumbersome to use, and several modern R packages exist to work better with identifying time and time intervals. We keep in mind their interoperability and display them in an ISO standard format. We will only need simple coercion or formatting rules.</p>
+<ul>
+<li><code>PublicationYear</code> is mandatory but should be truncated to the year.</li>
+<li><code>Date</code> allows a list of dates relevant to the resource to be added to DataCite, which is recommended.</li>
+<li>DCAT and Schema.org also uses dates, but different ones.</li>
+</ul>
+<p>With dates, we can work similarly to literals; we need to translate the dates into the standard RDF/XML notation. Even if somebody is not working with XML, this notation can easily be parsed and truncated to a date string.</p>
+</section>
+<section id="identifiers" class="level3">
+<h3 class="anchored" data-anchor-id="identifiers">Identifiers</h3>
+<p>We have one more important mandatory field, the <code>Identifier</code>, where DataCite is more particular than DublinCore; furthermore, DCAT, SDMX and Schema.org use a different model. DublinCore and DataCite aim to identify a physical or digital object in a catalogue that contains the dataset. DCAT, SDMX and Schema.org aim to describe the meaning of the abstract dataset semantically and conceptualise serialisations (files that may follow different formats, such as JSON, XML, CSV, and Excel) as other instances (distributions) of the dataset. So a data catalogue has a more complex identification than a library which collects one particular physical or digital file representation of the dataset.</p>
+<p>For a user who wants to comply with DataCite (and EU open science FAIR adoptions), it is a good practice to create a DOI to the first release of the dataset and all subsequent published versions; for example, in Zenodo this is possible with versioned DOIs. Yet for data services (Data feeds in Schema.org), there are more practical solutions than this, for example, when the dataset changes daily because new observations are added and released daily.</p>
+<p>The simplest solution is using a URI identifier for the dataset that we describe, reminding the user that for DataCite compliance, it must be a DataCite DOI, but our R solution allows using any URI. In the next step, we can extend this with the more structured information required by DCAT, SDMX, and Schema.org to find the dataset’s (various) downloadable files on the net.</p>
+<p>Identifiers, however, are used as properties of Agents and relatedItems. We should have two models for Identifiers: one that works well with DataCite and Dublin Core, and one that works on DCAT, SDMX and Schema.org.</p>
+</section>
+<section id="related-items" class="level3">
+<h3 class="anchored" data-anchor-id="related-items">Related Items</h3>
+<p>The DataCite relatedItems and the Dublin Core relation (dcterms:relation) concepts are comprehensive because they relate to many information objects, including books and journal articles. We only want to deal with datasets and potentially open ways for a more granular quality control of a statistical process. Consider a simple use case: our analysts download a GDP dataset and a population dataset from a data source and produce their own GDP/capita calculation. We want to relate both initial datasets (and the researchers working on the combination.)</p>
+<p>The original datasets should be recorded in the isDerivedFrom property of the relatedItem in DataCite, and they are recorded in Dublin Core as dcterms:source. This information is not sufficient for review or replication in our data analytical workflow; we may want to record who (the researchers) used what software agents to achieve the combination that we describe. As a starting point, we should provide a subjective view of how the dataset package should work with these metadata standards. For reproducibility, we should provide helper functions to provide a higher level of computational reproducibility (for example, recording elements of the users running environment, or providing more data provenance.) Dublin Core’s DCTERMS allows a flexible definition of such relations.</p>
+</section>
+<section id="subject" class="level3">
+<h3 class="anchored" data-anchor-id="subject">Subject</h3>
+<p>Going forward with the recommended fields, the most important one is the Subject. While DataCite allows the use of simple keywords, it also suggests the use of public thesauri for interoperability. The incorporation of Subjects with URIs is straightforward on the one hand but opens up the question of going further into the data structure definition of the dataset itself. For use with DCAT, SDMX or Schema.org, we seek a SKOS solution for Subjects, which semantically extends DataCite and Dublin Core without contradiction, as we keep the URIs of the Subjects but add equivalence, broader and narrower relationships to place the dataset on a richer concept map.</p>
+<p>we must be pragmatic here: for findability and future reuse, the user can add the most detail here, however, after a point, the user must change to a different metadata language. Our aim is not to provide a parser to/from RDF or OWL. We aim to find a simple-to-use representation form that can be the starting point of a far richer (and still connected) semantic description of the dataset.</p>
+</section>
+<section id="data-structure-definition" class="level3">
+<h3 class="anchored" data-anchor-id="data-structure-definition">Data Structure Definition</h3>
+<p>The Data Structure Definition aims to bring the dataset into relation with the following objects:</p>
+<ul>
+<li>A conceptual, semantic description of the constitutents of the dataset;</li>
+<li>Distributions or file serialisations of the dataset;</li>
+<li>Codebooks requires to understand instances of the observations recorded in each variable.</li>
+</ul>
+<p>In DataCite and Dublin Core, the focus is on the distribution or file; and the conceptualised description appears in Subject, and Geolocation (DataCite) or <code>dcterms:spatial</code> (Dublin Core.)</p>
+<p>Codebooks are very important for SDMX and for microdata management, for example, under the DDI standard.</p>
+<section id="codebooks" class="level4">
+<h4 class="anchored" data-anchor-id="codebooks">Codebooks</h4>
+<p>The R ecosystem offers various ways to deal with codebooks. Base R offers the use of the atomic factor class to record labelled data; various more modern packages, such as labelled, offer better support for the handling of values and labels of categorical data.</p>
+<p>Making labeling consistent among resources is a very important requirement in research. For example, survey harmonisation allows the combination of data recorded in different surveys, which requires the matching of codebooks. When we combine different datasets, even from the same source, for example, from Eurostat, we must ensure that we use a consistent labelling for dimensions to keep the semantic integrity of the analysis. If male and female data subjects are labelled in one data source as <code>M</code>; <code>F</code>, while in others <code>Man</code> and <code>Woman</code>, we must harmonise the coding.</p>
+<p>Interoperability can be greatly enhanced with the use of standardised codebooks. SDMX, which is an ISO standard, offers global codebook standards for many cross-domain concepts that are likely to appear in almost any dataset: for geographical reference areas, for points in time and time intervals, for various data quality attributions, or for sex at birth or gender.</p>
+<p>We should allow the user to crosswalk <code>Man</code> and <code>Woman</code> to the international standard <code>M</code>, <code>F</code> for a far greater interoperability and ease of reuse, and to be able to attach metadata about each variable (and eventually, if needed, each observation.)</p>
+<p>The accompanying <em>statcodelists</em> data package contains many internationally standardised codelists in native R objects <span class="citation" data-cites="antal_statcodelists_2022">(<a href="#ref-antal_statcodelists_2022" role="doc-biblioref">Antal 2022a</a>)</span>.</p>
+</section>
+<section id="conceptualisation-of-variables" class="level4">
+<h4 class="anchored" data-anchor-id="conceptualisation-of-variables">Conceptualisation of variables</h4>
+<p>The conceptualisation of variables means is required already to match the variable with a good codebook. We need to know that the reliable contains information about sex at birth or declared gender to be able to match it with the SDMX <code>CL_SEX</code> (or other standard) sex and gender codebooks.</p>
+<p>The conceptualisation of variables constituting a dataset should not be mixed up with the subject of the dataset itself. All statistical datasets should contain a variable about the reference geographical area and timeframe. Yet, it would be as misleading to add to the subjects of the dataset “Time” or “Geography” as adding “Table of contents” or “Bibliography” to the subject keywords of a book. Just because a book has a part that can be described well with the concept of a reference list or a statistical dataset has a reference list of observation times, they are not reference books or datasets about time.</p>
+<p>In our previous simple example, our users combined a dataset about GDP and another about population to a dataset about GDP/capita. Suppose they worked with national (not subnational) data; their resulting dataset can be best titled GDP Per Capita by Country. We may qualify the countries to a larger region or for a time interval; for example, if they somehow backcast inferred GDP data to the former Soviet Union, both time and geographical area are particular: Estimated GDP/Capita of Former Soviet Republics in the 1980s. It would be very natural to relate this dataset to concepts of the Soviet Union and the 1980s already in the library subject headings, regardless of whether we will add the reference area to DataCite’s Geolocation or dcterms:spatial. The GSIM statistical vocabulary (that connects SDMX and DDI) would describe such an interesting dataset in a far more expressive way than the more general-use DataCite or Dublin Core. Our role here is to provide good support for both.</p>
+<p>Our hypothesis is — and this requires broader user validation — that generally, the concepts that describe the <code>measure</code> variables of a statistical dataset should be recorded as the general Subject of the dataset itself. In our hypothetical example above, the reason why users would look for such a dataset would be the specific geographical and time coverage; therefore, the user should be able to add to Subjects the concepts that describe current countries and former Soviet republics or the time frame. To give a counter-example, a dataset that publishes observed currency exchange rates and adds a new observation about the daily opening and closing rate has new versions (distributions) and a new timeframe every day. In this case, the vital Subject is the exchange rate, and if it contains information about a few specific currencies, then these currencies, too. We would refrain from using the timespan in the Subject description, though we may want to use the daily frequency concept (SDMX:FREQ).</p>
+<p>Eventually, it is a subjective data curatorial decision on the critical constituents of the datasets that describe well the dataset as a singular concept: this should find its way to the descriptive DataCite, Dublin Core, DCAT or Schema.org fields to help search for the dataset. Where our approach goes beyond this use case is where the statistical processing starts: we need to understand every variable in the dataset, and we have to understand the observations reasonably well, too; in the language of tidy data, we have to know what the columns and the rows mean.</p>
+<p>We could add endless semantic information about each variable, or perhaps even about each observation, but it is unlikely that we would use R for this purpose. Our task is to enable a richer semantic description of the dataset by providing as much information as DCAT, SDMX, or QB asks for. We should be able to add a single subject keyword to each variable combined with a URI and a more descriptive label than the R variable name. Furthermore, in the case of using standard statistical concepts, we should be able to match this concept URI with the code list URI. If the variable records the sex of the statistical units (groups of women and men), then we must connect the variable (column) containing this information with the SEX concept of the statistical agency and the CL_SEX accompanying code list for full interoperability and later reuse.</p>
+</section>
+</section>
+<section id="distribution" class="level3">
+<h3 class="anchored" data-anchor-id="distribution">Distribution</h3>
+<p>The DataCite data model does not distinguish between a dataset and its embodiment(s) (“distribution(s)” in the DCAT terminology). Dublin Core assumes that a library has a copy of the dataset; DataCite goes further by allowing different versions of them and asking for each version to be a DOI identifier. Zenodo implemented a solution for this with its versioned DOIs.</p>
+<p>Yet a statistical distribution service would find this approach unworkable because DOIs are supposed to be permanent, long-term identifiers, and a statistical service will likely update a dataset daily. In DataCite (or Dublin Core), there is no attribute equivalent to dcat:accessURL or dcat:downloadURL; or Schema.org’s <a href="https://schema.org/DataDownload">DataDownload</a> concept.</p>
+<p>We do not want to model a data feed or an API in dataset, but we want to offer interoperability outside the R ecosystem, which will always require the serialisation of a dataset from an R object (our dataset object) to various, non-R specific file formats. Within the R ecosystem, our dataset S3 class can ensure that the dataset concept can be saved as a native .rds file and reused with all metadata. But naturally, R users often want interoperability with other systems or users who do not use R, and they export the dataset into different file serialisations: for example, into a CSV, JSON, Excel and SPSS “manifestation” of the same R object. Creating a DOI for every file manifestation of every new version would be inefficient; therefore, we need to use the more generic DCAT/SDMX/Schema.org identification for different serialisations. This way, we can significantly increase the interoperability and the reuse capacity because we make the reuse with varying software tools far more accessible than a library catalogue (which is not designed for this purpose.)</p>
+<p>The distribution will not start before the dataset is serialised to be transferable from the computer memory of our R user to other computers or data storage; therefore, unlike most of the metadata that we had worked on before, distribution metadata cannot be specified during the analytical work. We must leave this to the moment of saving the file or exporting the dataset from the computer memory (as an R object) to files. Another point to make here that before serialisation the DataCite metadata property Size (in Dublin Core dcterms:extent) is not known; and it is not even a property of the dataset (concept) but the actual serialisation, it will differ from file format to file format, and possibly even depend on the computer used to save the file. And of course, we may create several type of serialisations, which would require each a different DataCite record becasue of their different <code>Format</code> or <code>dcterms:format</code> properties.</p>
+<p>For full interoperability, the best is to export the entire dataset and its metadata in RDF because it keeps all the data and the metadata in a single, standardised file. Because there are excellent solutions for this conversion, our package will not include such functionality, only a vignette on how to work with other packages to achieve this goal.</p>
+<p>Turning the dataset object into a resource is optimal for semantic richness but reduces the usability to those other researchers who know how to work with an RDF resource. As a second-best solution, we also offer export to W3C flat CSV files, which are by design accompanied by a machine-readable JSON file.</p>
+</section>
+</section>
+<section id="implementation" class="level2">
+<h2 class="anchored" data-anchor-id="implementation">Implementation</h2>
+<p>We implement an s3 data class, dataset, which can be created from any R object that is inherited from base R’s data.frame; a <code>tibble</code> from tidyverse, a data.table, or a tsibble for a modern time series dataset. We must very carefully add methods to the dataset class to avoid any inconsistencies among the widely used packages for the various dataset containers. Currently, we only implement <code>describe()</code>, which gives a human-readable oversight of the metadata attached to our dataset.</p>
+<p>It is unlikely to conflict with any classes derived from <code>tibble</code>, <code>data.frame</code> or <code>tsibble</code>, because it only interacts with attributes of the objects, not the object contents itself.</p>
+<section id="metadata-management" class="level3">
+<h3 class="anchored" data-anchor-id="metadata-management">Metadata Management</h3>
+<section id="literals-and-agents" class="level4">
+<h4 class="anchored" data-anchor-id="literals-and-agents">Literals and agents</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>iris_bibentry <span class="ot">&lt;-</span> <span class="fu">bibentry</span>( </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">bibtype =</span> <span class="st">"Misc"</span>, </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">"Iris Dataset"</span>, </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">author =</span> <span class="fu">person</span>(<span class="at">family =</span><span class="st">"Anderson"</span>, </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                  <span class="at">given =</span><span class="st">"Edgar"</span>, </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">role =</span> <span class="st">"aut"</span>), </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">doi =</span> <span class="st">"https://doi.org/10.1111/j.1469-1809.1936.tb02137.x"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">description =</span> <span class="st">"The famous iris dataset distributed with R."</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">publisher =</span> <span class="st">"American Iris Society"</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">1935</span>,  <span class="co"># datacite:PublicationYear and dc:date</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">version =</span> <span class="st">"1.0"</span>, <span class="co"># datacite:Version</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">url =</span> <span class="st">"https://en.wikipedia.org/wiki/Iris_flower_data_set"</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">language =</span> <span class="st">"eng"</span>, </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">resourceType =</span> <span class="st">"Dataset"</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Even though the default print of a <code>bibentry</code> item does not show all the metadata, we can easily retrieve them.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>iris_bibentry<span class="sc">$</span>publisher</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "American Iris Society"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>iris_bibentry<span class="sc">$</span>version</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "1.0"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>iris_bibentry<span class="sc">$</span>description</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "The famous iris dataset distributed with R."</code></pre>
+</div>
+</div>
+<p>We hard-wire the Dataset type into the attribute <code>type</code>.</p>
+</section>
+<section id="related-items-1" class="level4">
+<h4 class="anchored" data-anchor-id="related-items-1">Related Items</h4>
+<p>To handle Related Items, we use again the <code>utils::bibentry</code> and <code>utils:person</code> functions. The Iris dataset is distributed with each installation of R. Let’s add this information to <code>myiris</code> using <code>utils::citation()</code>, which will create the bibentry of the R installed on our user’s computer.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>rref <span class="ot">&lt;-</span> <span class="fu">citation</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>rref</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+To cite R in publications use:
+
+  R Core Team (2022). R: A language and environment for statistical
+  computing. R Foundation for Statistical Computing, Vienna, Austria.
+  URL https://www.R-project.org/.
+
+A BibTeX entry for LaTeX users is
+
+  @Manual{,
+    title = {R: A Language and Environment for Statistical Computing},
+    author = {{R Core Team}},
+    organization = {R Foundation for Statistical Computing},
+    address = {Vienna, Austria},
+    year = {2022},
+    url = {https://www.R-project.org/},
+  }
+
+We have invested a lot of time and effort in creating R, please cite it
+when using it for data analysis. See also 'citation("pkgname")' for
+citing R packages.</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>relatedItem <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">relatedItem1 =</span> <span class="fu">list</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">relatedItem =</span> rref, </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">relatedItemType =</span> <span class="st">"Manual"</span>, </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">relationType =</span> <span class="st">"IsPartOf"</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="dates-1" class="level4">
+<h4 class="anchored" data-anchor-id="dates-1">Dates</h4>
+<p>Dates can be added as a list to the attributes. The dates should use for interoperability base R’s “POSIXlt” and “POSIXct” classes, or a simple integer for years, or a simple character string that can be unambigously coerced into a date type.</p>
+<p>Eventually, for full interoperability, we will have to be able to serialise dates to <a href="https://www.w3.org/TR/xmlschema-2/#date">XML Schema Part 2: Datatypes Second Edition</a>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>myirisdata <span class="ot">&lt;-</span> <span class="fu">list</span> (</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">PublicationYear =</span> <span class="dv">1935</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Created =</span> <span class="dv">1935</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Issued =</span> <span class="fu">as.Date</span>(<span class="st">"2022-01-01"</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="subjects" class="level3">
+<h3 class="anchored" data-anchor-id="subjects">Subjects</h3>
+<p>The <code>subject</code> class is a simple, pre-defined class inherited from <code>list</code> that contains the elements requires for DataCite.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"subjects3.R"</span>))</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>irissubject <span class="ot">&lt;-</span> <span class="fu">subject</span>( </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">heading =</span>  <span class="fu">c</span>(<span class="st">"Data sets"</span>, <span class="st">"Irises (Plants)"</span>), </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">schemeURI =</span> <span class="fu">rep</span>(<span class="st">"https://id.loc.gov/authorities/subjects/"</span>, <span class="dv">2</span>),</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">valueURI =</span> <span class="fu">c</span>(<span class="st">"https://id.loc.gov/authorities/subjects/sh2018002256.html"</span>,                      <span class="st">"https://id.loc.gov/authorities/subjects/sh85068079.html"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="the-dataset-s3-class" class="level3">
+<h3 class="anchored" data-anchor-id="the-dataset-s3-class">The dataset S3 Class</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(iris)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"datasets3.R"</span>))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>myiris <span class="ot">&lt;-</span> <span class="fu">new_dataset</span> (<span class="at">x =</span> iris, </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">DataBibentry =</span> irisref, </span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>                       <span class="at">Subject =</span> irissubject )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(myiris, <span class="st">"Subject"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+$heading
+[1] "Data sets"
+
+$subjectScheme
+[1] ""
+
+$schemeURI
+[1] "https://id.loc.gov/authorities/subjects/"
+
+$valueURI
+[1] ""
+
+attr(,"class")
+[1] "subject" "list"   
+
+[[2]]
+$heading
+[1] "Irises (Plants)"
+
+$subjectScheme
+[1] ""
+
+$schemeURI
+[1] "https://id.loc.gov/authorities/subjects/"
+
+$valueURI
+[1] ""
+
+attr(,"class")
+[1] "subject" "list"   
+
+attr(,"class")
+[1] "subject" "list"   </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(myiris, <span class="st">"DataStructure"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$Sepal.Length
+$Sepal.Length$name
+[1] "Sepal.Length"
+
+$Sepal.Length$label
+$Sepal.Length$label[[1]]
+[1] ""
+
+
+$Sepal.Length$type
+[1] ""
+
+$Sepal.Length$range
+[1] "xsd:decimal"
+
+$Sepal.Length$comment
+[1] ""
+
+$Sepal.Length$concept
+$Sepal.Length$concept$heading
+[1] ""
+
+$Sepal.Length$concept$schemeURI
+[1] ""
+
+$Sepal.Length$concept$valueURI
+[1] ""
+
+
+$Sepal.Length$defintion
+$Sepal.Length$defintion$schemeURI
+[1] ""
+
+$Sepal.Length$defintion$valueURI
+[1] ""
+
+
+
+$Sepal.Width
+$Sepal.Width$name
+[1] "Sepal.Width"
+
+$Sepal.Width$label
+$Sepal.Width$label[[1]]
+[1] ""
+
+
+$Sepal.Width$type
+[1] ""
+
+$Sepal.Width$range
+[1] "xsd:decimal"
+
+$Sepal.Width$comment
+[1] ""
+
+$Sepal.Width$concept
+$Sepal.Width$concept$heading
+[1] ""
+
+$Sepal.Width$concept$schemeURI
+[1] ""
+
+$Sepal.Width$concept$valueURI
+[1] ""
+
+
+$Sepal.Width$defintion
+$Sepal.Width$defintion$schemeURI
+[1] ""
+
+$Sepal.Width$defintion$valueURI
+[1] ""
+
+
+
+$Petal.Length
+$Petal.Length$name
+[1] "Petal.Length"
+
+$Petal.Length$label
+$Petal.Length$label[[1]]
+[1] ""
+
+
+$Petal.Length$type
+[1] ""
+
+$Petal.Length$range
+[1] "xsd:decimal"
+
+$Petal.Length$comment
+[1] ""
+
+$Petal.Length$concept
+$Petal.Length$concept$heading
+[1] ""
+
+$Petal.Length$concept$schemeURI
+[1] ""
+
+$Petal.Length$concept$valueURI
+[1] ""
+
+
+$Petal.Length$defintion
+$Petal.Length$defintion$schemeURI
+[1] ""
+
+$Petal.Length$defintion$valueURI
+[1] ""
+
+
+
+$Petal.Width
+$Petal.Width$name
+[1] "Petal.Width"
+
+$Petal.Width$label
+$Petal.Width$label[[1]]
+[1] ""
+
+
+$Petal.Width$type
+[1] ""
+
+$Petal.Width$range
+[1] "xsd:decimal"
+
+$Petal.Width$comment
+[1] ""
+
+$Petal.Width$concept
+$Petal.Width$concept$heading
+[1] ""
+
+$Petal.Width$concept$schemeURI
+[1] ""
+
+$Petal.Width$concept$valueURI
+[1] ""
+
+
+$Petal.Width$defintion
+$Petal.Width$defintion$schemeURI
+[1] ""
+
+$Petal.Width$defintion$valueURI
+[1] ""
+
+
+
+$Species
+$Species$name
+[1] "Species"
+
+$Species$label
+$Species$label[[1]]
+[1] ""
+
+
+$Species$type
+[1] ""
+
+$Species$range
+[1] "coded"
+
+$Species$comment
+[1] ""
+
+$Species$concept
+$Species$concept$heading
+[1] ""
+
+$Species$concept$schemeURI
+[1] ""
+
+$Species$concept$valueURI
+[1] ""
+
+
+$Species$defintion
+$Species$defintion$schemeURI
+[1] ""
+
+$Species$defintion$valueURI
+[1] ""</code></pre>
+</div>
+</div>
+<section id="the-describe-general-method" class="level4">
+<h4 class="anchored" data-anchor-id="the-describe-general-method">The describe General Method</h4>
+<p>The aim of the <code>desribe()</code> method is to provide a simple printing helper function for the rich metadata that we attach to the data.frame-inherited datasets.</p>
+<p>Most R packages would create a new <code>print()</code> method for this purpose, but in our case, it would create unnecessary complications and risk losing the metadata focus. The <code>print()</code> functions should give an overview of the R object’s data and some key metadata; we would like to print out the metadata only.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"describe.R"</span>))</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(myiris)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>The iris Dataset 
+Dataset with 150 observations (rows) and 5 variables (columns).
+Description: The famous dataset that is distributed with R.
+Creator: Edgar Anderson [aut]</code></pre>
+</div>
+</div>
+</section>
+<section id="the-distribute-general-method" class="level4">
+<h4 class="anchored" data-anchor-id="the-distribute-general-method">The distribute General Method</h4>
+<p>The <code>distribute()</code> general method would provide a similar support to the <code>devtools::release()</code> function: a step-by-step check of the data and metadata before making it public. In this case, of course, the release would be the dataset embedded in the data.frame-inherited R object.</p>
+<p>As earlier stated, we differentiate between the concept of a dataset, which is similar to but not equal to the R object in the users runtime environment, and the distribution of the dataset. While an abstract concept is R-language independent, an R object in memory is similar in the sense that it cannot be accessed by a third party.</p>
+<p>When we serialise this object into a file and make it available for the public, we must maintain the integrity of the link between the abstract dataset and the actual files, especially if we create paralel a CSV, SPSS, JSON serialisation; or, if we plan to release regularly updated version of the dataset.</p>
+<p>The dataset object at the time of serialisation must include metadata that had not been known at the beginning of the production pipeline:</p>
+<ul>
+<li>The final identifier of the dataset (for example, before uploading to Zenodo, we can receive a reserved DOI for this purpose);</li>
+<li>The date of the release;</li>
+<li>The person responsible for the released dataset;</li>
+<li>The Publisher’s name who is responsible for the dataset;</li>
+<li>The file name, the size of the file, and the URL where it will be made accessible;</li>
+<li>A Rights statement.</li>
+</ul>
+<ol type="1">
+<li><p>We record the information above into the <code>dataset</code> object. It can be saved as an <code>.rds</code> file, too.</p></li>
+<li><p>If the user wants to serialise the <code>dataset</code> into an RDF resource, this information goes straight into the file; if we release a CSV file in concordance with the W3C recommendations, we place this metadata into the accompanying JSON file.</p></li>
+<li><p>If we upload the CSV file or the SPSS file to Zenodo, we are expected to fill out this information on Zenodo by hand or the uploading utility we use for this purpose.</p></li>
+</ol>
+</section>
+</section>
+<section id="nquad-representation" class="level3">
+<h3 class="anchored" data-anchor-id="nquad-representation">Nquad representation</h3>
+<p>The <code>convert_to_nquad()</code> function utilises the <code>normalise_df()</code> and <code>xs_class()</code> functions, which in turn are inspired by, but heavily changed from some internal functions of the <code>rdflib()</code> package, particularly the internal <code>poor_mans_nquad()</code>. These functions, after more heavy user testing, could be also included in <code>rdflib()</code> as they serve a rather different purpose.</p>
+<p>The current <code>poor_mans_nquad()</code> optimises speed and converts any R <code>data.frame</code> fast into a syntactically correct Nquad, but in a way that is semantically unrealistically simple: each subject and each predicate has the same prefix, while object have no prefix at all. We are creating a more realistic, and less time-optimised version that is only using base R (no <code>tidyr</code> dependency) and correctly parses our <code>dataaset</code> objects columns, row names, and attributes into a <code>WRC Data cube</code> defined dataset.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>benelux <span class="ot">&lt;-</span> <span class="fu">data.frame</span> ( </span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">id       =</span> <span class="fu">as.character</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>), </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">refArea  =</span> <span class="fu">c</span>(<span class="st">"BE"</span>, <span class="st">"NE"</span>, <span class="st">"LU"</span>), </span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">currency =</span> <span class="fu">rep</span>(<span class="st">"EUR"</span>, <span class="dv">3</span>),</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">obsValue =</span> <span class="fu">c</span>(<span class="dv">212</span>, <span class="dv">214</span>, <span class="dv">56</span>)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Context --------------------------</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co"># sdmx-measure: http://purl.org/linked-data/sdmx/2009/measure#</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co"># sdmx-dimension: http://purl.org/linked-data/sdmx/2009/dimension#</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(benelux, <span class="st">"prefix"</span>) <span class="ot">&lt;-</span> <span class="fu">c</span>( </span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>  <span class="st">"id"</span> <span class="ot">=</span> <span class="st">"eg"</span>,</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>  <span class="st">"refArea"</span>  <span class="ot">=</span> <span class="st">"sdmx-dimension"</span>,</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>  <span class="st">"currency"</span> <span class="ot">=</span> <span class="st">"sdmx-measure"</span>,</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>  <span class="st">"obsValue"</span> <span class="ot">=</span> <span class="st">"sdmx-measure"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The <code>nquad_statement()</code> is a simple string pasting function where we add syntactic validation and helpers.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"nquad_statement.R"</span>))</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">nquad_statement</span>(<span class="at">subject =</span> <span class="st">"eg:myiris"</span>, <span class="st">"rdf:type"</span>, <span class="st">"&lt;qb:Dataset&gt;"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "&lt;eg:myiris&gt; &lt;rdf:type&gt; &lt;qb:Dataset&gt; ."</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># We create a temporary file to save the statments into:</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>tempquads <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="co"># We use write.table() instead of base R writeLines() to append </span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="co"># the file with new statements:</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>utils<span class="sc">::</span><span class="fu">write.table</span>(<span class="at">x =</span> <span class="fu">nquad_statement</span>(</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">subject=</span><span class="st">"eg:myiris"</span>, <span class="at">predicate=</span><span class="st">"rdf:type"</span>, <span class="at">object=</span><span class="st">"&lt;qb:Dataset&gt;"</span>), </span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> tempquads, <span class="at">col.names=</span><span class="cn">FALSE</span>, <span class="at">row.names=</span><span class="cn">FALSE</span>, <span class="at">quote=</span><span class="cn">FALSE</span>)</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>utils<span class="sc">::</span><span class="fu">write.table</span>(<span class="at">x =</span> <span class="fu">nquad_statement</span>(</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>  <span class="st">"eg:myiris"</span>, <span class="st">"dc:description"</span>, <span class="st">'"The famous iris dataset"@en'</span>), </span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> tempquads, <span class="at">col.names=</span><span class="cn">FALSE</span>, <span class="at">row.names=</span><span class="cn">FALSE</span>, <span class="at">quote=</span><span class="cn">FALSE</span>, </span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">append=</span><span class="cn">TRUE</span>)</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the resulting temporary file:</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a><span class="fu">readLines</span>(tempquads)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "&lt;eg:myiris&gt; &lt;rdf:type&gt; &lt;qb:Dataset&gt; ."                        
+[2] "&lt;eg:myiris&gt; &lt;dc:description&gt; \"The famous iris dataset\"@en ."</code></pre>
+</div>
+</div>
+</section>
+<section id="changing-rdf-serialisation-formats" class="level3">
+<h3 class="anchored" data-anchor-id="changing-rdf-serialisation-formats">Changing RDF serialisation formats</h3>
+<p>we would like to keep the dataset package lean with few dependencies, so any converstions should go into a vignette article that shows the interaction with other packages.</p>
+<p>We can read these simple statements as RDF with the <em>rdflib</em> package <span class="citation" data-cites="boettinger_rdflib_2023">(<a href="#ref-boettinger_rdflib_2023" role="doc-biblioref">Boettinger 2023</a>)</span>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(rdflib)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: rdflib</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'rdflib' was built under R version 4.2.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rdf_parse</span>(tempquads, <span class="at">format=</span><span class="st">"nquads"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total of 2 triples, stored in hashes
+-------------------------------
+&lt;eg:myiris&gt; &lt;rdf:type&gt; &lt;qb:Dataset&gt; .
+&lt;eg:myiris&gt; &lt;dc:description&gt; "The famous iris dataset"@en .</code></pre>
+</div>
+</div>
+<p>And convert them (i.e., re-serialise them) to any RDF serialisation formats, for example, perhaps the most human-editing friendly Turtle:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>iris_turtle <span class="ot">&lt;-</span> <span class="fu">rdf_serialize</span>(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">rdf =</span> <span class="fu">rdf_parse</span>(tempquads, <span class="at">format=</span><span class="st">"nquads"</span>), </span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">"turtle"</span>, </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">namespace =</span> <span class="fu">c</span>(</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">rdf =</span> <span class="st">"http://www.w3.org/1999/02/22-rdf-syntax-ns#"</span>, </span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">dc =</span> <span class="st">"http://purl.org/dc/elements/1.1/"</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="co"># To maintain text formatting, use cat() instead of print().</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(iris_turtle)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>@base &lt;localhost://&gt; .
+@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix dc: &lt;http://purl.org/dc/elements/1.1/&gt; .
+
+&lt;eg:myiris&gt;
+    &lt;dc:description&gt; "The famous iris dataset"@en ;
+    &lt;rdf:type&gt; &lt;qb:Dataset&gt; .</code></pre>
+</div>
+</div>
+<p>Or the standard machine-readable output of RDF, i.e, XML:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>iris_rdfxml <span class="ot">&lt;-</span> <span class="fu">rdf_serialize</span>(</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">rdf =</span> <span class="fu">rdf_parse</span>(tempquads, <span class="at">format=</span><span class="st">"nquad"</span>), </span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">"rdfxml"</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="co"># To maintain text formatting, use cat() instead of print().</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(iris_rdfxml)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xml:base="localhost://"&gt;
+  &lt;rdf:Description rdf:about="eg:myiris"&gt;
+    &lt;ns0:type xmlns:ns0="rdf:" rdf:resource="qb:Dataset"/&gt;
+  &lt;/rdf:Description&gt;
+  &lt;rdf:Description rdf:about="eg:myiris"&gt;
+    &lt;ns0:description xmlns:ns0="dc:" xml:lang="en"&gt;The famous iris dataset&lt;/ns0:description&gt;
+  &lt;/rdf:Description&gt;
+&lt;/rdf:RDF&gt;</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="conceptualisation" class="level2">
+<h2 class="anchored" data-anchor-id="conceptualisation">Conceptualisation</h2>
+<p>For interoperability, the best is to reuse already existing URIs for the description of variables (or even observations). In those cases we use of SKOS <span class="citation" data-cites="miles_skos_2009">(<a href="#ref-miles_skos_2009" role="doc-biblioref">Miles and Bechhofer 2009</a>)</span>, as recommended by [QB] [DCAT-AP] and many other applications. The concept should be mapped to a <code>skos:Concept</code> and when we want to connect codelists, too, the overall set of admissible values using <code>skos:ConceptScheme</code> or <code>skos:Collection</code>.</p>
+<p>DataCite allows the use of free text, literal keywords, or URIs, when it requires the separate recording of the schemeURI and the valueURI. Perhaps the most used scheme is the <a href="https://id.loc.gov/authorities/subjects/">Library of Congress Subject Headings</a>, which is identified by the <code>schemeURI=https://id.loc.gov/authorities/subjects/</code>; the concept of the dataset with the <code>value URI=https://id.loc.gov/authorities/subjects/sh2018002256.html</code>. Recording the schemeURI and the valueURI is practical for our later use cases, too, but not strictly necessary.</p>
+<p>The <code>namespace</code> element is not even defined in DataCite, however, it can be very practical to use prefix abbreviations within the <code>DataSetDefinition</code> (see later) and used together with <code>rdf_serialise</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>myirissubject <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Datasets =</span> <span class="fu">list</span> (</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">heading =</span> <span class="st">"Data sets"</span>,</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">namespace =</span> <span class="st">"LCCH"</span>,</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">schemeURI =</span> <span class="st">"https://id.loc.gov/authorities/subjects/"</span>,</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">valueURI =</span> <span class="st">"https://id.loc.gov/authorities/subjects/sh2018002256.htm"</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  ), </span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">Irises =</span> <span class="fu">list</span> (</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">heading =</span> <span class="st">"Irises (plants)"</span>, </span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">context =</span> <span class="st">"LCCH"</span>,</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">schemeURI =</span> <span class="st">"https://id.loc.gov/authorities/subjects/"</span>, </span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">valueURI =</span> <span class="st">"https://id.loc.gov/authorities/subjects/sh85068079.html"</span></span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(myiris, <span class="st">"Subject"</span>) <span class="ot">&lt;-</span> myirissubject</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The retrieval of the <code>iris</code> subject is straightforward, yet not very ideal if we want to add a matching taxonomic reference to the actual iris species that Anderson was describing.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(myiris, <span class="st">"Subject"</span>)<span class="sc">$</span>Iris</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$heading
+[1] "Irises (plants)"
+
+$context
+[1] "LCCH"
+
+$schemeURI
+[1] "https://id.loc.gov/authorities/subjects/"
+
+$valueURI
+[1] "https://id.loc.gov/authorities/subjects/sh85068079.html"</code></pre>
+</div>
+</div>
+<p>This leads us to the problem of providing a semantically richer description of the dataset that DataCite or Dublin Core, or perhaps even a DCAT would ask from us. Our solution is to allow (and encourage) the recording of more accurate semantic information, but as a separate attribute to the object.</p>
+<p>Technically, we can add any kind of R objects to the attributes, but the portability of our object would be limited if we were going beyond base R classes for storing the metadata. For example, if we load the jsonld package, we can add without a problem a jsonld object to the attributes of our iris dataset instance and save it to an <code>.rds</code> file. However, we cannot ensure that a new user who loads this <code>.rds</code> file knows what JSON-LD is or how to read this information.</p>
+<section id="reconciliation-with-other-metadata-editing-tools-and-languages" class="level3">
+<h3 class="anchored" data-anchor-id="reconciliation-with-other-metadata-editing-tools-and-languages">Reconciliation with other metadata editing tools and languages</h3>
+<p>Our initial recommendation is the use of RDF syntax that is easy to hand-edit and can be well represented in base R’s character vectors. <a href="https://www.w3.org/TR/turtle/">RDF 1.1 Turtle</a>, <a href="https://www.w3.org/TR/n-triples/">RDF 1.1 N-Triples</a>, <a href="https://www.w3.org/TR/n-quads/">RDF 1.1 N-Quads</a> can all be represented well with character strings, and with an appropriate parser, they can be read into a graph database.</p>
+<p>The <em>rdflib</em> package <span class="citation" data-cites="boettinger_rdflib_2023">(<a href="#ref-boettinger_rdflib_2023" role="doc-biblioref">Boettinger 2023</a>)</span> already uses N-Quads internally with the <code>poor_mans_nquad()</code> internal function. For interoperability among the two packages (and potential co-development) we will use in the <em>dataset</em> package the N-Quads notation.</p>
+<p>Because the most likely use case of our concept description (and every other metadata descriptions) is that they will be translated to RDF and written to one of these (or other) serialisation format, basically the user can start an interative process of exporting from our R package the already recorded metadata, and add with hand or a more appropriate metadata editor further information to the dataset, which then can be re-attached to the dataset’s representation as an R object.</p>
+<p>We can, for example, record a German-language description (taken from <a href="https://de.wikipedia.org/wiki/Portal:Statistik/Datens%C3%A4tze#:~:text=Der%20Iris%2Dflower%2DDatensatz%20besteht,und%20des%20Petalum%20(Kronblatt).">Portal:Statistik/Datensätze</a> of the German Wikipedia) to the following N-Triple statement in a character string and attach it to the object.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(myiris, <span class="st">"N-Triples"</span>) <span class="ot">&lt;-</span> <span class="st">'&lt;eg-myiris&gt; &lt;http://purl.org/dc/elements/1.1/description&gt; "Der </span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="st">Iris-flower-Datensatz besteht aus jeweils 50 </span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="st">Beobachtungen dreier Arten von Schwertlilien (Iris) </span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="st">(Iris Setosa, Iris Virginica und Iris Versicolor), </span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="st">an denen jeweils vier Attribute der Blüten erhoben </span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a><span class="st">wurden: Die Länge und die Breite des Sepalum </span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="st">(Kelchblatt) und des Petalum (Kronblatt)."@de'</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(myiris, <span class="st">"N-Triples"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "&lt;eg-myiris&gt; &lt;http://purl.org/dc/elements/1.1/description&gt; \"Der \nIris-flower-Datensatz besteht aus jeweils 50 \nBeobachtungen dreier Arten von Schwertlilien (Iris) \n(Iris Setosa, Iris Virginica und Iris Versicolor), \nan denen jeweils vier Attribute der Blüten erhoben \nwurden: Die Länge und die Breite des Sepalum \n(Kelchblatt) und des Petalum (Kronblatt).\"@de"</code></pre>
+</div>
+</div>
+<p>It is unlikely that somebody wants to edit such statements in R, however, once the statements are clearly recorded, it may be a good idea to attach them back to the R object or its <code>.rds</code> file representation.</p>
+<p>Needless to say that this <code>N-Triples</code> section can contain the translated <code>Subject</code> list into N-Triples and its extension with further taxonomic information, for example, in a plant species taxonomy <a href="https://www.wikidata.org/wiki/Q156901">on Wikispecies</a>.</p>
+</section>
+<section id="connection-to-foundational-ontologies" class="level3">
+<h3 class="anchored" data-anchor-id="connection-to-foundational-ontologies">Connection to Foundational Ontologies</h3>
+<p>We aim not only to meet the DataCite or Dublin Core standards (or to force a choice between them.) Adding a creator to a dataset file can be unambiguously understood within the context of a library or repository catalogue. We can further increase the interoperability of our dataset by turning it into an RDF resource by using a more foundational ontology to describe the very same term. Defining the creator as a person in the context of FOAF, a machine-readable ontology <span class="citation" data-cites="brickley_foaf_2014">(<a href="#ref-brickley_foaf_2014" role="doc-biblioref">Brickley and Miller 2014</a>)</span>, we can find on linked data or the web a lot more information about their related scientific activities or their relations to other people working on similar projects or other datasets and articles interpreting the data.</p>
+<ul>
+<li><p>We will describe our agents with the help of FOAF when turning our dataset into a resource, one of the oldest and most widely used foundational ontologies of the World Wide Web.</p></li>
+<li><p>For conceptualisation, we will use SKOS, one of the most used ontologies for this purpose and a quasi-universal standard.</p></li>
+<li><p>For describing the internal semantics of the dataset, i.e., providing information on how to use the data, we will rely on Data cube, a closely aligned W3C standard with SDMX, the statistical data and metadata global standard.</p></li>
+</ul>
+<p>Of course, our definitions will use RDF and RDFS, the languages that make our RDF resource machine-readable, which are themselves described as ontologies.</p>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>This last step makes our resources particularly resilient and future-proof: they hard-wire into the same file that contains the data, besides the standardised metadata and codebook information, even the metadata language that allows reading this information, as if we placed our dataset into a library within a booklet carefully describing the data table, and providing even a single-language dictionary for future generations to keep the booklet readable.</p>
+</section>
+<section id="references" class="level2 unnumbered">
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-DCAT_2" class="csl-entry" role="listitem">
+Albertoni, Riccardo, David Browning, Simon Cox, Alejandra Gonzalez Beltran, Andrea Perego, and Peter Winstanley, eds. 2020. <span>‘Data Catalog Vocabulary (<span>DCAT</span>) - Version 2’</span>. W3C. <a href="https://www.w3.org/TR/2020/REC-vocab-dcat-2-20200204/">https://www.w3.org/TR/2020/REC-vocab-dcat-2-20200204/</a>.
+</div>
+<div id="ref-DCAT_3" class="csl-entry" role="listitem">
+———, eds. 2023. <span>‘Data Catalog Vocabulary (<span>DCAT</span>) - Version 3. <span>[Working Draft]</span>’</span>. <span>W3C</span>. <a href="https://www.w3.org/TR/vocab-dcat-3/">https://www.w3.org/TR/vocab-dcat-3/</a>.
+</div>
+<div id="ref-ddi_alliance_ddi-codebook_2012" class="csl-entry" role="listitem">
+Alliance, DDI. 2012. <span>‘<span>DDI</span>-Codebook 2.5 <span></span> Data Documentation Initiative’</span>. <span>DDI</span> Alliance. <a href="https://ddialliance.org/Specification/DDI-Codebook/2.5/">https://ddialliance.org/Specification/DDI-Codebook/2.5/</a>.
+</div>
+<div id="ref-antal_statcodelists_2022" class="csl-entry" role="listitem">
+Antal, Daniel. 2022a. <span>‘Statcodelists: Use Standardized Statistical Codelists’</span>. Vienna: The Comprehensive R Archive Network. <a href="https://CRAN.R-project.org/package=statcodelists">https://CRAN.R-project.org/package=statcodelists</a>.
+</div>
+<div id="ref-daniel_antal_2022_7440192" class="csl-entry" role="listitem">
+———. 2022b. <span>‘<span class="nocase">dataset: Create Data Frames that are Easier to Exchange and Reuse [development versions]</span>’</span>. Zenodo. <a href="https://doi.org/10.5281/zenodo.7440192">https://doi.org/10.5281/zenodo.7440192</a>.
+</div>
+<div id="ref-antal_dataset_2023" class="csl-entry" role="listitem">
+———. 2023. <span>‘<span class="nocase">dataset</span>: Create Data Frames That Are Easier to Exchange and Reuse’</span>. Vienna: The Comprehensive R Archive Network. <a href="https://CRAN.R-project.org/package=dataset">https://CRAN.R-project.org/package=dataset</a>.
+</div>
+<div id="ref-beckett_rdf_2014" class="csl-entry" role="listitem">
+Beckett, David, Tim Berners-Lee, Eric Prud’hommeaux, and Gavin Carothers. 2014. <span>‘<span>RDF</span> 1.1 Turtle. Terse <span>RDF</span> Triple Language’</span>. <span>W3C</span>. <a href="https://www.w3.org/TR/turtle/">https://www.w3.org/TR/turtle/</a>.
+</div>
+<div id="ref-biron_xml_2004" class="csl-entry" role="listitem">
+Biron, Paul V., Kaiser Permanente, and Ashok Malhotra, eds. 2004. <span>‘<span>XML</span> Schema Part 2: Datatypes Second Edition’</span>. W3C. <a href="https://www.w3.org/TR/xmlschema-2/#date">https://www.w3.org/TR/xmlschema-2/#date</a>.
+</div>
+<div id="ref-dataspice" class="csl-entry" role="listitem">
+Boettiger, Carl, Scott Chamberlain, Auriel Fournier, Kelly Hondula, Anna Krystalli, Bryce Mecum, Maëlle Salmon, Kate Kate Webbink, Kara Woo, and Irene Steves. 2021. <span>‘<span class="nocase">dataspice</span>: Create Lightweight Schema.org Descriptions of Data’</span>. Vienna: The Comprehensive R Archive Network.<a href=" https://CRAN.R-project.org/package=dataspice"> https://CRAN.R-project.org/package=dataspice</a>.
+</div>
+<div id="ref-boettinger_rdflib_2023" class="csl-entry" role="listitem">
+Boettinger, Carl. 2023. <span>‘<span class="nocase">rdflib</span>: Tools to Manipulate and Query Semantic Data’</span>. Vienna: The Comprehensive R Archive Network. <a href="https://CRAN.R-project.org/package=rdflib">https://CRAN.R-project.org/package=rdflib</a>.
+</div>
+<div id="ref-brickley_foaf_2014" class="csl-entry" role="listitem">
+Brickley, Dan, and Libby Miller. 2014. <span>‘<span>FOAF</span> Vocabulary Specification 0.99, Paddington Edition’</span>. <a href="https://iptc.org/thirdparty/foaf/">https://iptc.org/thirdparty/foaf/</a>.
+</div>
+<div id="ref-N-Quads_2014" class="csl-entry" role="listitem">
+Carothers, Gavin. 2014. <span>‘<span>RDF</span> 1.1 n-Quads’</span>. W3C. <a href="https://www.w3.org/TR/n-quads/">https://www.w3.org/TR/n-quads/</a>.
+</div>
+<div id="ref-N-Triples_2014" class="csl-entry" role="listitem">
+Carothers, Gavin, and Andy Seaborne. 2014. <span>‘<span>RDF</span> 1.1 n-Triples’</span>. W3C. <a href="https://www.w3.org/TR/n-triples/">https://www.w3.org/TR/n-triples/</a>.
+</div>
+<div id="ref-datacite_ev_datacite_2021" class="csl-entry" role="listitem">
+<span>‘<span>DataCite</span> to Dublin Core Mapping 4.4’</span>. n.d. <span>DataCite</span> e.V. <a href="https://doi.org/10.14454/qn00-qx85">https://doi.org/10.14454/qn00-qx85</a>.
+</div>
+<div id="ref-dublin_core_dcmi_2020" class="csl-entry" role="listitem">
+Dublin Core. 2020. <span>‘<span>DCMI</span> Metadata Terms’</span>. <a href="http://dublincore.org/specifications/dublin-core/dcmi-terms/2020-01-20/">http://dublincore.org/specifications/dublin-core/dcmi-terms/2020-01-20/</a>.
+</div>
+<div id="ref-datacite_metadata_scheme_4-4" class="csl-entry" role="listitem">
+Group, DataCite Metadata Working. 2021. <span>‘<span>DataCite</span> Metadata Schema 4.4’</span>. <span>DataCite</span> e.V. <a href="https://schema.datacite.org/meta/kernel-4.4/">https://schema.datacite.org/meta/kernel-4.4/</a>.
+</div>
+<div id="ref-prov-o_2013" class="csl-entry" role="listitem">
+Lebo, Timothy, Satya Sahoo, and Deborah McGuinness, eds. 2013. <span>‘<span>PROV</span>-o: The <span>PROV</span> Ontology’</span>. W3C. <a href="https://www.w3.org/TR/prov-o/">https://www.w3.org/TR/prov-o/</a>.
+</div>
+<div id="ref-miles_skos_2009" class="csl-entry" role="listitem">
+Miles, Alistair, and Sean Bechhofer, eds. 2009. <span>‘<span>SKOS</span> Simple Knowledge Organization System Reference’</span>. W3C. <a href="https://www.w3.org/TR/skos-reference/">https://www.w3.org/TR/skos-reference/</a>.
+</div>
+<div id="ref-perego_datacite_2021" class="csl-entry" role="listitem">
+Perego, Andrea, Timothy Austin, Anders Friis-Christensen, Lorenzino Vaccari, and Chrisa Tsinaraki. 2021. <span>‘<span>DataCite</span> to <span>DCAT</span>-<span>AP</span> Mapping’</span>. Joint Research Centre of the European Commission. <a href="https://ec-jrc.github.io/datacite-to-dcat-ap/">https://ec-jrc.github.io/datacite-to-dcat-ap/</a>.
+</div>
+<div id="ref-sdmx_information_model_2021" class="csl-entry" role="listitem">
+SDMX. 2021. <span>‘<span>SDMX</span> 3.0 Technical Specifications. Section 2 Information Model: <span>UML</span> Conceptual Design. Version 3.0’</span>. Statistical Data; Metadata <span>eXchange</span>. <a href="https://sdmx.org/wp-content/uploads/SDMX_3-0-0_SECTION_2_FINAL-1_0.pdf">https://sdmx.org/wp-content/uploads/SDMX_3-0-0_SECTION_2_FINAL-1_0.pdf</a>.
+</div>
+<div id="ref-tennison_csv_2016" class="csl-entry" role="listitem">
+Tennison, Jeni. 2016. <span>‘<span>CSV</span> on the Web: A Primer’</span>. W3C. <a href="https://www.w3.org/TR/tabular-data-primer/">https://www.w3.org/TR/tabular-data-primer/</a>.
+</div>
+<div id="ref-cyganiak_rdf_2014" class="csl-entry" role="listitem">
+W3C. 2014. <span>‘<span>RDF</span> Data Cube Vocabulary’</span>. Edited by Richard Cyganiak and Dave Reynolds. <span>W3C</span>. <a href="https://rd-alliance.github.io/metadata-directory/standards/rdf-data-cube-vocabulary.html">https://rd-alliance.github.io/metadata-directory/standards/rdf-data-cube-vocabulary.html</a>.
+</div>
+<div id="ref-wickham_tidy_2014" class="csl-entry" role="listitem">
+Wickham, Hadley. 2014. <span>‘Tidy Data’</span>. <em>Journal of Statistical Software</em> 59 (September): 1–23. <a href="https://doi.org/10.18637/jss.v059.i10">https://doi.org/10.18637/jss.v059.i10</a>.
+</div>
+</div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
