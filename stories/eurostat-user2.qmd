@@ -1,0 +1,36 @@
+---
+title: "Ahmed: advanced R/eurostat user"
+subtitle: "Release a simple, FAIR dataset obtained with the eurostat package."
+format: html
+editor: visual
+---
+
+## Eurostat user
+
+This is a usability and requirement scenario for [Making Datasets Truly Interoperable in R](https://music.dataobservatory.eu/documents/open_music_europe/dataset-development/dataset-working-paper.html) --- source: [dataset-working-paper.qmd](https://github.com/dataobservatory-eu/dataset-development/stories/)
+
+**Persona:** Ahmed is a research data engineer. His task is to publish his research projects dataset into a five-star FAIR repository that uses a data catalogue. The data catalogue conforms with the DCAT W3C standard and the European Open Data Portal's DCAT-AP specification.
+
+**Before:** Ahmed has been using the *eurostat* package for retrieving information from the Eurostat data warehouse, which conforms the SDMX data model, and comes from well-documented data cubes. It still takes him considerable effort to semantically enrich his datasets to put them into the repository, because the *eurostat* package does not retrieve most of the metadata that comes with the dataset.
+
+```{r loadpackages, echo="FALSE", message=FALSE, warning=FALSE}
+library(eurostat)
+library(dplyr)
+library(tidyr)
+cult_emp_sex <- get_eurostat("cult_emp_sex")
+str(cult_emp_sex)
+```
+
+**After**: Rebeca can save the `cult_emp_growth_sex` dataset in R into an `.rds` file that contains all the DataCite or Dublin Core metadata that is required on Zenodo for publication. She can export this `cult_emp_growth_sex.rds` file into a CSV format that meets the W3C consortium's standard on publishing CSV with machine-readable JSON metadata. She can also serialize for long-term usability the `cult_emp_growth_sex` it into an RDF schema that contains all the semantic information to connect this dataset to other data that use the SDMX semantic standards, such as other datasets of Eurostat, the World Bank or OECD.
+
+## Functional requirements
+
+1.  The *eurostat* package retains the provenance metadata, i.e., the descriptive metadata and the semantics of the Eurostat original `cult_emp_sex`. *The dataset package may be used by eurostat to record the metadata from the source.*
+
+2.  The *eurostat* package retains the valid range and the codelist of each variable, in this case, `sex`, `unit`, `geo`, `time`, and the measured values.
+
+3.  Ahmed does not want to republish the Eurostat datasets, he wants to define new variables and add it to a derived, new dataset. He wants to retain the original dataset metadata (i.e., DataStrucutreDefinition, FAIR metadata) in a way that he can add his definition and codelist to the dataset.
+
+4.  Ahmed wants to be able to save the data and its metadata to at least the W3C format to save into CSV + JSON (for the metadata) or the RDF/SDMX standard serialisation to XML (data and metadata into one xml file.)
+
+5.  He also wants to retain and export the metadata needed for a Data Catalogue, i.e., the title of the dataset (not the individual variables), etc.
