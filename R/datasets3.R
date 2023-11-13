@@ -49,6 +49,47 @@ initialise_dsd <- function(df, col) {
 }
 initialize_dsd <- initialise_dsd
 
+as_dataset <- function(x) {
+  UseMethod("as_dataset", x)
+}
+
+title = "My iris"
+author  <- person("Daniel", "Antal")
+year = NULL
+version = NULL
+publisher = NULL
+x <- iris
+subject = mysubjects
+
+as_dataset.data.frame <- function(x, 
+                                  identifier = NULL,
+                                  author,
+                                  title, 
+                                  publisher = NULL, 
+                                  year = NULL, 
+                                  version = NULL, 
+                                  subject = NULL) {
+  
+  if (is.null(year)) year <- substr(as.character(Sys.Date()), 1,4)
+  if (is.null(version)) version  <- "0.1.0" else version <- as.character(version)
+  if (is.null(publisher)) publisher <- ":tba"
+  if (is.null(identifier)) identifier <- ":tba"
+  
+  DataBibentry  <- utils::bibentry(bibtype="Misc", 
+                                   title = title, 
+                                   author=author, 
+                                   publisher=publisher,
+                                   year=year,
+                                   resourceType = "Dataset", 
+                                   identifier = identifier,
+                                   version = version
+                                   )
+  
+  
+  new_dataset(x, Identifier = NULL, DataBibentry = DataBibentry, Subject = subject)
+  
+}
+
 
 new_dataset <- function (x, 
                          Identifier = NULL, 
@@ -62,7 +103,7 @@ new_dataset <- function (x,
                    Subject=Subject)
   
   
-  DataStructureNest <- lapply ( 1:ncol(x), function(col) initialise_dsd(df = x, col) )
+  DataStructureNest <- lapply (1:ncol(x), function(col) initialise_dsd(df = x, col) )
   
   DataStructure <- DataStructureNest[[1]]
   if (ncol(x)>1) {
@@ -77,32 +118,6 @@ new_dataset <- function (x,
   x
 }
 
-validate_dataset <- function(x, 
-                             Identifier, 
-                             DataBibentry,
-                             Subject) {
-  
-  if (! inherits(x, "data.frame"))   {
-    wrong_class <- class(x)
-    stop("dataset(x=...) must be inherited from a data.frame (like data.frame, tibble, data.table, tsibble ...), not ", wrong_class)
-  }
-  
-  if (! inherits(DataBibentry, "bibentry"))   {
-    wrong_class <- class(DataBibentry)
-    stop("dataset(Bibentry=...) must be inherited from a bibentry, not ", wrong_class)
-  }
-  
-  if (! inherits(Subject, "subject"))   {
-    wrong_class <- class(Subject)
-    stop("dataset(Subject=...) must be inherited from a subject [created by dataset::subject()], not ", wrong_class)
-  }
-  
-  if (! is.null(Identifier)) {
-    if (! inherits(Identifier, "character"))   {
-      stop("dataset(Identifier=...) must be of class character.")
-    }
-  }
-}
 
 testiris <- iris
 myiris <- new_dataset (x = testiris, 

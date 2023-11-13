@@ -27,6 +27,7 @@ new_subject <- function(x,
 
 subject <- function(heading,
                     subjectScheme = NULL, 
+                    context = NULL,
                     schemeURI = NULL, 
                     valueURI = NULL, 
                     classificationCode = NULL ) {

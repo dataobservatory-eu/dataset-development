@@ -17,3 +17,5 @@ There is a discussion about this package on  [rOpenSci](https://github.com/ropen
 ## Stories
 
 - Rebeca, intermediate R user, able to use the _eurostat_ package and _tidyverse_, wants to become FAIR compliant: [eurostat-user1](https://music.dataobservatory.eu/documents/open_music_europe/dataset-development/stories/eurostat-user1.html) -- source [stories/eurostat-user1.qmd](https://github.com/dataobservatory-eu/dataset-development/stories/)
+- Ahmed, advanced R user, research data engineer wants to retain the data, add his new variables, and place them into a Data Catalogue: 
+[eurostat-user2](https://music.dataobservatory.eu/documents/open_music_europe/dataset-development/stories/eurostat-user2.html) -- source [stories/eurostat-user2.qmd](https://github.com/dataobservatory-eu/dataset-development/stories/)
